@@ -1,0 +1,2 @@
+# No additional dependencies required beyond Python standard library
+# This server uses only built-in Python modules
