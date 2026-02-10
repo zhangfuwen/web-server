@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- 机器人头部 - 充满整个画面 -->
+  <rect x="5" y="5" width="90" height="90" rx="20" ry="20" fill="#00e676"/>
+  
+  <!-- 眼睛区域 - 大面积深色 -->
+  <rect x="10" y="25" width="80" height="35" rx="10" ry="10" fill="#1a1a2e"/>
+  
+  <!-- 左眼 - 大红眼 -->
+  <circle cx="35" cy="42" r="12" fill="#ff1744"/>
+  <circle cx="35" cy="42" r="5" fill="white"/>
+  
+  <!-- 右眼 - 大绿眼 -->
+  <circle cx="65" cy="42" r="12" fill="#00e676"/>
+  <circle cx="65" cy="42" r="5" fill="white"/>
+  
+  <!-- 大嘴巴 -->
+  <rect x="25" y="70" width="50" height="12" rx="6" ry="6" fill="#1a1a2e"/>
+  <rect x="30" y="73" width="40" height="6" rx="3" ry="3" fill="#00e676"/>
+  
+  <!-- 大天线 -->
+  <rect x="45" y="2" width="10" height="10" fill="#00e676"/>
+  <circle cx="50" cy="5" r="8" fill="#ff1744"/>
+</svg>
