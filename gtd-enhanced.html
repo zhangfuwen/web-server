@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Getting Things Done - Enhanced</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 12px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.15);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        header h1 i {
+            font-size: 2.2rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .tabs-container {
+            padding: 0 20px;
+            background: var(--light);
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            padding: 20px 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .tab i {
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-title i {
+            background: var(--primary);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-input-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 2px dashed var(--light-gray);
+        }
+
+        .task-input-group {
+            flex: 1;
+        }
+
+        .task-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .task-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .task-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .comment-input {
+            margin-top: 10px;
+        }
+
+        .add-task-btn {
+            padding: 14px 28px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-task-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .task-list {
+            min-height: 200px;
+        }
+
+        .task-item {
+            background: white;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .task-item.completed {
+            opacity: 0.7;
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .task-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            margin-top: 3px;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: var(--dark);
+            word-break: break-word;
+        }
+
+        .task-text a {
+            color: var(--primary);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .task-text a:hover {
+            color: var(--primary-dark);
+        }
+
+        .task-comments {
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .comments-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .comment-item {
+            background: var(--light);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--dark);
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .task-delete {
+            background: var(--warning);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .task-delete:hover {
+            background: #d61a70;
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--light-gray);
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .status-bar {
+            margin-top: 30px;
+            padding: 15px;
+            background: var(--light);
+            border-radius: var(--border-radius);
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.95rem;
+            border: 1px solid var(--light-gray);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .task-input-container {
+                flex-direction: column;
+            }
+            
+            .add-task-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tabs {
+                gap: 3px;
+            }
+            
+            .tab {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-check-circle"></i> Getting Things Done</h1>
+            <p>Your enhanced task management system with comments and beautiful design</p>
+        </header>
+        
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" data-category="projects">
+                    <i class="fas fa-project-diagram"></i> Projects
+                </button>
+                <button class="tab" data-category="next-actions">
+                    <i class="fas fa-tasks"></i> Next Actions
+                </button>
+                <button class="tab" data-category="waiting-for">
+                    <i class="fas fa-clock"></i> Waiting For
+                </button>
+                <button class="tab" data-category="someday-maybe">
+                    <i class="fas fa-lightbulb"></i> Someday/Maybe
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="projects" class="category-content active">
+                <div class="category-header">
+                    <h2 class="category-title"><i class="fas fa-project-diagram"></i> Projects</h2>
+                </div>
+                
+                <div class="task-input-container">
+                    <div class="task-input-group">
+                        <label for="projects-input">Add a new project</label>
+                        <input type="text" id="projects-input" class="task-input" placeholder="Enter project description... Use [title](url) for links">
+                        <div class="comment-input">
+                            <label for="projects-comment">Add a comment (optional)</label>
+                            <input type="text" id="projects-comment" class="task-input" placeholder="Add notes or context about this project...">
+                        </div>
+                    </div>
+                    <button class="add-task-btn" onclick="addTask('projects')">
+                        <i class="fas fa-plus"></i> Add Project
+                    </button>
+                </div>
+                
+                <div class="task-list" id="projects-list">
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <h3>No projects yet</h3>
+                        <p>Add your first project to get started!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="next-actions" class="category-content">
+                <div class="category-header">
+                    <h2 class="category-title"><i class="fas fa-tasks"></i> Next Actions</h2>
+                </div>
+                
+                <div class="task-input-container">
+                    <div class="task-input-group">
+                        <label for="next-actions-input">Add a next action</label>
+                        <input type="text" id="next-actions-input" class="task-input" placeholder="Enter next action... Use [title](url) for links">
+                        <div class="comment-input">
+                            <label for="next-actions-comment">Add a comment (optional)</label>
+                            <input type="text" id="next-actions-comment" class="task-input" placeholder="Add notes or context about this action...">
+                        </div>
+                    </div>
+                    <button class="add-task-btn" onclick="addTask('next-actions')">
+                        <i class="fas fa-plus"></i> Add Action
+                    </button>
+                </div>
+                
+                <div class="task-list" id="next-actions-list">
+                    <div class="empty-state">
+                        <i class="fas fa-tasks"></i>
+                        <h3>No next actions yet</h3>
+                        <p>Add your first next action to get started!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="waiting-for" class="category-content">
+                <div class="category-header">
+                    <h2 class="category-title"><i class="fas fa-clock"></i> Waiting For</h2>
+                </div>
+                
+                <div class="task-input-container">
+                    <div class="task-input-group">
+                        <label for="waiting-for-input">Add something you're waiting for</label>
+                        <input type="text" id="waiting-for-input" class="task-input" placeholder="Enter what you're waiting for... Use [title](url) for links">
+                        <div class="comment-input">
+                            <label for="waiting-for-comment">Add a comment (optional)</label>
+                            <input type="text" id="waiting-for-comment" class="task-input" placeholder="Add notes about who/what you're waiting for...">
+                        </div>
+                    </div>
+                    <button class="add-task-btn" onclick="addTask('waiting-for')">
+                        <i class="fas fa-plus"></i> Add Waiting
+                    </button>
+                </div>
+                
+                <div class="task-list" id="waiting-for-list">
+                    <div class="empty-state">
+                        <i class="fas fa-clock"></i>
+                        <h3>No waiting items yet</h3>
+                        <p>Add something you're waiting for to track it!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="someday-maybe" class="category-content">
+                <div class="category-header">
+                    <h2 class="category-title"><i class="fas fa-lightbulb"></i> Someday/Maybe</h2>
+                </div>
+                
+                <div class="task-input-container">
+                    <div class="task-input-group">
+                        <label for="someday-maybe-input">Add a someday/maybe item</label>
+                        <input type="text" id="someday-maybe-input" class="task-input" placeholder="Enter someday/maybe item... Use [title](url) for links">
+                        <div class="comment-input">
+                            <label for="someday-maybe-comment">Add a comment (optional)</label>
+                            <input type="text" id="someday-maybe-comment" class="task-input" placeholder="Add notes or context about this idea...">
+                        </div>
+                    </div>
+                    <button class="add-task-btn" onclick="addTask('someday-maybe')">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+                
+                <div class="task-list" id="someday-maybe-list">
+                    <div class="empty-state">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>No someday/maybe items yet</h3>
+                        <p>Add ideas you might pursue later!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar" id="status-bar">
+                Ready to get things done!
+                <div class="stats">
+                    <div class="stat-item"><i class="fas fa-check-circle"></i> <span id="completed-count">0</span> completed</div>
+                    <div class="stat-item"><i class="fas fa-list"></i> <span id="total-count">0</span> total tasks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Category mapping
+        const categoryMap = {
+            'projects': '# Projects',
+            'next-actions': '# Next Actions',
+            'waiting-for': '# Waiting For',
+            'someday-maybe': '# Someday/Maybe'
+        };
+
+        let tasks = {
+            'projects': [],
+            'next-actions': [],
+            'waiting-for': [],
+            'someday-maybe': []
+        };
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.category-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                const category = tab.dataset.category;
+                document.getElementById(category).classList.add('active');
+            });
+        });
+
+        // Load tasks from server
+        async function loadTasks() {
+            try {
+                showStatus('Loading tasks...');
+                const response = await fetch('/api/gtd/tasks');
+                if (!response.ok) throw new Error('Failed to load tasks');
+                const text = await response.text();
+                parseTasksFromMarkdown(text);
+                renderAllTasks();
+                updateStats();
+                showStatus('Tasks loaded successfully!');
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                showStatus('Error loading tasks: ' + error.message);
+            }
+        }
+
+        // Parse markdown format into tasks object (with comments support)
+        function parseTasksFromMarkdown(markdown) {
+            const lines = markdown.split('\n');
+            let currentCategory = null;
+            
+            // Reset all tasks
+            tasks = {
+                'projects': [],
+                'next-actions': [],
+                'waiting-for': [],
+                'someday-maybe': []
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line === '# Projects') {
+                    currentCategory = 'projects';
+                } else if (line === '# Next Actions') {
+                    currentCategory = 'next-actions';
+                } else if (line === '# Waiting For') {
+                    currentCategory = 'waiting-for';
+                } else if (line === '# Someday/Maybe') {
+                    currentCategory = 'someday-maybe';
+                } else if (line.startsWith('- ') && currentCategory) {
+                    const taskText = line.substring(2).trim();
+                    let completed = false;
+                    let actualText = taskText;
+                    
+                    if (taskText.startsWith('[x] ')) {
+                        completed = true;
+                        actualText = taskText.substring(4).trim();
+                    } else if (taskText.startsWith('[ ] ')) {
+                        actualText = taskText.substring(4).trim();
+                    }
+                    
+                    // Check for comments on following lines
+                    let comments = [];
+                    let j = i + 1;
+                    while (j < lines.length && lines[j].trim().startsWith('  • Comment:')) {
+                        const comment = lines[j].trim().substring('  • Comment:'.length).trim();
+                        comments.push(comment);
+                        j++;
+                        i++; // Skip this line in main loop
+                    }
+                    
+                    tasks[currentCategory].push({
+                        text: actualText,
+                        completed: completed,
+                        comments: comments
+                    });
+                }
+            }
+        }
+
+        // Render markdown links and URLs as clickable links
+        function renderTaskText(text) {
+            // First, handle Markdown links: [title](url)
+            let processedText = text.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, title, url) => {
+                const displayTitle = title || url;
+                return `<a href="${url}" target="_blank" title="${url}">${escapeHtml(displayTitle)}</a>`;
+            });
+            
+            // Then, handle bare URLs (http:// or https://)
+            const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
+            processedText = processedText.replace(urlRegex, (url) => {
+                // Check if this URL is already inside an anchor tag (from previous replacement)
+                if (processedText.includes(`<a href="${url}"`)) {
+                    return url; // Already handled as markdown link
+                }
+                
+                // Fetch title for bare URLs and show as tooltip
+                fetchPageTitle(url).then(title => {
+                    const tooltip = title ? `${title} (${url})` : url;
+                    // Update the specific link element with the tooltip
+                    const links = document.querySelectorAll(`a[href="${url}"]`);
+                    links.forEach(link => {
+                        if (link.title === url) { // Only update if it's a bare URL link
+                            link.title = tooltip;
+                        }
+                    });
+                }).catch(() => {
+                    // Keep original URL as tooltip if fetch fails
+                });
+                
+                return `<a href="${url}" target="_blank" title="${url}">${escapeHtml(url)}</a>`;
+            });
+            
+            return processedText;
+        }
+
+        // Fetch page title for bare URLs
+        async function fetchPageTitle(url) {
+            try {
+                const response = await fetch(`/api/gtd/title?url=${encodeURIComponent(url)}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch title');
+                }
+                const data = await response.json();
+                return data.title || url;
+            } catch (error) {
+                console.warn('Could not fetch title for URL:', url, error);
+                return url;
+            }
+        }
+
+        // Render tasks for a specific category
+        function renderTasks(category) {
+            const container = document.getElementById(category + '-list');
+            const taskList = tasks[category];
+            
+            if (taskList.length === 0) {
+                const emptyStates = {
+                    'projects': '<i class="fas fa-folder-open"></i><h3>No projects yet</h3><p>Add your first project to get started!</p>',
+                    'next-actions': '<i class="fas fa-tasks"></i><h3>No next actions yet</h3><p>Add your first next action to get started!</p>',
+                    'waiting-for': '<i class="fas fa-clock"></i><h3>No waiting items yet</h3><p>Add something you\'re waiting for to track it!</p>',
+                    'someday-maybe': '<i class="fas fa-lightbulb"></i><h3>No someday/maybe items yet</h3><p>Add ideas you might pursue later!</p>'
+                };
+                container.innerHTML = `<div class="empty-state">${emptyStates[category]}</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            taskList.forEach((task, index) => {
+                const taskElement = document.createElement('div');
+                taskElement.className = `task-item ${task.completed ? 'completed' : ''}`;
+                const renderedText = renderTaskText(task.text);
+                
+                let commentsHTML = '';
+                if (task.comments && task.comments.length > 0) {
+                    const commentItems = task.comments.map(comment => 
+                        `<div class="comment-item">${escapeHtml(comment)}</div>`
+                    ).join('');
+                    commentsHTML = `
+                        <div class="task-comments">
+                            <div class="comments-title"><i class="fas fa-comment"></i> Comments</div>
+                            ${commentItems}
+                        </div>
+                    `;
+                }
+                
+                taskElement.innerHTML = `
+                    <div class="task-header">
+                        <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${category}', ${index})">
+                        <span class="task-text">${renderedText}</span>
+                    </div>
+                    ${commentsHTML}
+                    <div class="task-actions">
+                        <button class="task-delete" onclick="deleteTask('${category}', ${index})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+                container.appendChild(taskElement);
+            });
+        }
+
+        // Render all task categories
+        function renderAllTasks() {
+            renderTasks('projects');
+            renderTasks('next-actions');
+            renderTasks('waiting-for');
+            renderTasks('someday-maybe');
+        }
+
+        // Update statistics
+        function updateStats() {
+            let total = 0;
+            let completed = 0;
+            
+            Object.values(tasks).forEach(category => {
+                total += category.length;
+                completed += category.filter(task => task.completed).length;
+            });
+            
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('completed-count').textContent = completed;
+        }
+
+        // Add a new task
+        async function addTask(category) {
+            const input = document.getElementById(category + '-input');
+            const commentInput = document.getElementById(category + '-comment');
+            const text = input.value.trim();
+            const comment = commentInput.value.trim();
+            
+            if (!text) return;
+
+            const newTask = { text: text, completed: false, comments: [] };
+            if (comment) {
+                newTask.comments.push(comment);
+            }
+            
+            tasks[category].push(newTask);
+            renderTasks(category);
+            updateStats();
+            
+            input.value = '';
+            commentInput.value = '';
+            
+            await saveTasks();
+            showStatus('Task added successfully!');
+        }
+
+        // Toggle task completion
+        async function toggleTask(category, index) {
+            tasks[category][index].completed = !tasks[category][index].completed;
+            renderTasks(category);
+            updateStats();
+            await saveTasks();
+            showStatus('Task updated!');
+        }
+
+        // Delete a task
+        async function deleteTask(category, index) {
+            tasks[category].splice(index, 1);
+            renderTasks(category);
+            updateStats();
+            await saveTasks();
+            showStatus('Task deleted!');
+        }
+
+        // Save tasks to server
+        async function saveTasks() {
+            try {
+                showStatus('Saving tasks...');
+                const markdown = generateMarkdown();
+                const response = await fetch('/api/gtd/tasks', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'text/markdown'
+                    },
+                    body: markdown
+                });
+                if (!response.ok) throw new Error('Failed to save tasks');
+                showStatus('Tasks saved successfully!');
+            } catch (error) {
+                console.error('Error saving tasks:', error);
+                showStatus('Error saving tasks: ' + error.message);
+            }
+        }
+
+        // Generate markdown from tasks object (with comments support)
+        function generateMarkdown() {
+            let markdown = '';
+            
+            // Projects
+            markdown += '# Projects\n';
+            tasks.projects.forEach(task => {
+                const prefix = task.completed ? '[x] ' : '[ ] ';
+                markdown += `- ${prefix}${task.text}\n`;
+                if (task.comments && task.comments.length > 0) {
+                    task.comments.forEach(comment => {
+                        markdown += `  • Comment: ${comment}\n`;
+                    });
+                }
+            });
+            markdown += '\n';
+            
+            // Next Actions
+            markdown += '# Next Actions\n';
+            tasks['next-actions'].forEach(task => {
+                const prefix = task.completed ? '[x] ' : '[ ] ';
+                markdown += `- ${prefix}${task.text}\n`;
+                if (task.comments && task.comments.length > 0) {
+                    task.comments.forEach(comment => {
+                        markdown += `  • Comment: ${comment}\n`;
+                    });
+                }
+            });
+            markdown += '\n';
+            
+            // Waiting For
+            markdown += '# Waiting For\n';
+            tasks['waiting-for'].forEach(task => {
+                const prefix = task.completed ? '[x] ' : '[ ] ';
+                markdown += `- ${prefix}${task.text}\n`;
+                if (task.comments && task.comments.length > 0) {
+                    task.comments.forEach(comment => {
+                        markdown += `  • Comment: ${comment}\n`;
+                    });
+                }
+            });
+            markdown += '\n';
+            
+            // Someday/Maybe
+            markdown += '# Someday/Maybe\n';
+            tasks['someday-maybe'].forEach(task => {
+                const prefix = task.completed ? '[x] ' : '[ ] ';
+                markdown += `- ${prefix}${task.text}\n`;
+                if (task.comments && task.comments.length > 0) {
+                    task.comments.forEach(comment => {
+                        markdown += `  • Comment: ${comment}\n`;
+                    });
+                }
+            });
+            
+            return markdown;
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Show status message
+        function showStatus(message) {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.textContent = message;
+            // Clear status after 3 seconds
+            setTimeout(() => {
+                if (statusBar.textContent === message) {
+                    statusBar.innerHTML = 'Ready to get things done!<div class="stats"><div class="stat-item"><i class="fas fa-check-circle"></i> <span id="completed-count">0</span> completed</div><div class="stat-item"><i class="fas fa-list"></i> <span id="total-count">0</span> total tasks</div></div>';
+                    updateStats();
+                }
+            }, 3000);
+        }
+
+        // Handle Enter key in inputs
+        document.querySelectorAll('input[type="text"]').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const category = this.id.replace(/(-input|-comment)$/, '');
+                    addTask(category);
+                }
+            });
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', loadTasks);
+    </script>
+</body>
+</html>

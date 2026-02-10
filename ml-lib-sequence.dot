@@ -1,0 +1,55 @@
+@startuml
+title ML Library Kernel Operations Sequence
+
+actor User as user
+participant "Character Device" as chardev
+participant "ML Library Core" as mllib
+participant "ML Model" as model
+participant "Kernel Memory" as memory
+
+user -> chardev: open("/dev/mllibdev")
+chardev -> mllib: ml_lib_init()
+mllib -> model: allocate_ml_model()
+model -> memory: kmalloc(GFP_KERNEL)
+memory --> model: model_ptr
+model --> mllib: ML model ready
+mllib --> chardev: Device initialized
+chardev --> user: File descriptor returned
+
+user -> chardev: write(data, size)
+chardev -> mllib: ml_lib_write(data, size)
+mllib -> model: ml_model_process_input(data, size)
+model -> memory: copy_from_user()
+memory --> model: Data copied to kernel buffer
+model --> mllib: Input processed
+mllib --> chardev: Write successful
+chardev --> user: Bytes written
+
+user -> chardev: ioctl(ML_LIB_TEST_DEV_IOCGETSIZE)
+chardev -> mllib: ml_lib_get_size()
+mllib -> model: ml_model_get_dataset_size()
+model --> mllib: Current size
+mllib --> chardev: Size retrieved
+chardev --> user: Size returned via ioctl
+
+user -> chardev: read(buffer, size)
+chardev -> mllib: ml_lib_read(buffer, size)
+mllib -> model: ml_model_extract_dataset()
+model -> memory: generate_test_data()
+memory --> model: Test data generated
+model --> mllib: Dataset ready
+mllib -> memory: copy_to_user(buffer, data)
+memory --> mllib: Data copied to userspace
+mllib --> chardev: Read successful
+chardev --> user: Data returned
+
+user -> chardev: close()
+chardev -> mllib: ml_lib_cleanup()
+mllib -> model: ml_model_destroy()
+model -> memory: kfree(model_ptr)
+memory --> model: Memory freed
+model --> mllib: Model destroyed
+mllib --> chardev: Cleanup complete
+chardev --> user: Device closed
+
+@enduml
