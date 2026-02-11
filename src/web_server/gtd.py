@@ -256,7 +256,7 @@ class GTDHandler:
                 # Fallback to directory listing
                 return self.list_directory(os.path.join(BASE_DIR, 'gtd'))
         except Exception as e:
-            self.send_error(500, f"Error serving GTD app: {str(e)}")
+            self.send_error(500, f"Error serving GTD app: {repr(e)}")
     
     def serve_gtd_static(self, path):
         """Serve static files from GTD directory"""
@@ -277,7 +277,7 @@ class GTDHandler:
             else:
                 return self.serve_gtd_app()
         except Exception as e:
-            self.send_error(500, f"Error serving GTD static file: {str(e)}")
+            self.send_error(500, f"Error serving GTD static file: {repr(e)}")
     
     def serve_gtd_tasks(self):
         """Serve the tasks.md file content"""
@@ -304,7 +304,7 @@ class GTDHandler:
                 self.wfile.write(content.encode('utf-8'))
             
         except Exception as e:
-            self.send_error(500, f"Error reading tasks file: {str(e)}")
+            self.send_error(500, f"Error reading tasks file: {repr(e)}")
     
     def add_gtd_task(self):
         """Add a new task (not used in current frontend, but available for API)"""
@@ -320,7 +320,7 @@ class GTDHandler:
             self.wfile.write(json.dumps({"message": "Task added"}).encode('utf-8'))
             
         except Exception as e:
-            self.send_error(400, f"Error adding task: {str(e)}")
+            self.send_error(400, f"Error adding task: {repr(e)}")
     
     def update_gtd_tasks(self):
         """Update the entire tasks.md file with comments support"""
@@ -349,7 +349,7 @@ class GTDHandler:
             self.wfile.write(json.dumps({"message": "Tasks updated successfully"}).encode('utf-8'))
             
         except Exception as e:
-            self.send_error(500, f"Error updating tasks: {str(e)}")
+            self.send_error(500, f"Error updating tasks: {repr(e)}")
     
     def clear_gtd_tasks(self):
         """Clear all tasks"""
@@ -363,7 +363,7 @@ class GTDHandler:
             self.wfile.write(json.dumps({"message": "Tasks cleared successfully"}).encode('utf-8'))
             
         except Exception as e:
-            self.send_error(500, f"Error clearing tasks: {str(e)}")
+            self.send_error(500, f"Error clearing tasks: {repr(e)}")
     
     def extract_title_api(self):
         """Extract title from URL for GTD tasks"""
@@ -387,4 +387,4 @@ class GTDHandler:
             self.wfile.write(response_json.encode('utf-8'))
             
         except Exception as e:
-            self.send_error(500, f"Error extracting title: {str(e)}")
+            self.send_error(500, f"Error extracting title: {repr(e)}")

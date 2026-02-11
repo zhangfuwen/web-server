@@ -255,7 +255,7 @@ class GTDHandler:
                 # Fallback to directory listing
                 return self.list_directory(os.path.join(BASE_DIR, 'gtd'))
         except Exception as e:
-            self.send_error(500, f"Error serving GTD app: {str(e)}")
+            self.send_error(500, f"Error serving GTD app: {repr(e)}")
     
     def serve_gtd_static(self, path):
         """Serve static files from GTD directory"""
@@ -276,7 +276,7 @@ class GTDHandler:
             else:
                 return self.serve_gtd_app()
         except Exception as e:
-            self.send_error(500, f"Error serving GTD static file: {str(e)}")
+            self.send_error(500, f"Error serving GTD static file: {repr(e)}")
     
     def serve_gtd_tasks(self):
         """Serve the tasks.md file content"""

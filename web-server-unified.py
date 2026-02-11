@@ -19,7 +19,12 @@ import threading
 import socket
 from socketserver import ThreadingMixIn
 import requests
-from bs4 import BeautifulSoup
+# BeautifulSoup 是可选的，用于 URL 标题提取
+try:
+    from bs4 import BeautifulSoup
+    BEAUTIFULSOUP_AVAILABLE = True
+except ImportError:
+    BEAUTIFULSOUP_AVAILABLE = False
 
 # 设置工作目录 - 使用当前目录
 BASE_DIR = os.getcwd()
@@ -36,6 +41,54 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Accept-Ranges', 'bytes')
         super().end_headers()
+
+    def send_error(self, code, message=None, explain=None):
+        """Override to ensure UTF-8 encoding for error messages."""
+        try:
+            # Use default error message if not provided
+            if message is None:
+                if code in self.responses:
+                    message = self.responses[code][0]
+                else:
+                    message = ''
+            if explain is None:
+                if code in self.responses:
+                    explain = self.responses[code][1]
+                else:
+                    explain = ''
+            
+            # Ensure message and explain are strings
+            msg = f"{code} {message}"
+            if explain:
+                msg += f": {explain}"
+            
+            # Log the error
+            self.log_error("code %d, message %s", code, message)
+            
+            # Send response
+            self.send_response(code)
+            self.send_header('Connection', 'close')
+            
+            # HTML error page with UTF-8 encoding
+            content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{code} {message}</title>
+</head>
+<body>
+    <h1>{code} {message}</h1>
+    <p>{explain}</p>
+</body>
+</html>"""
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(content.encode('utf-8'))))
+            self.end_headers()
+            if self.command != 'HEAD' and code >= 200 and code not in (204, 304):
+                self.wfile.write(content.encode('utf-8'))
+        except Exception:
+            # If something goes wrong, fall back to parent implementation
+            super().send_error(code, message, explain)
 
     def do_GET(self):
         """处理GET请求"""
