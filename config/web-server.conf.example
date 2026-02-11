@@ -1,0 +1,17 @@
+# Web Server Configuration Example
+# Copy to /etc/web-server/web-server.conf and modify as needed
+
+[server]
+port = 8080
+host = 0.0.0.0
+base_dir = /var/www/html
+log_level = INFO
+
+[gtd]
+data_dir = /var/www/html/gtd
+tasks_file = /var/www/html/gtd/tasks.md
+
+[paths]
+static_dir = /opt/web-server/share/static
+log_dir = /var/log/web-server
+pid_file = /var/run/web-server.pid

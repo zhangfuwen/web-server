@@ -11,9 +11,10 @@ import sys
 # Optional imports for URL title extraction
 # These are imported inside the function with try/except to avoid hard dependency
 
-# GTD tasks file path
+# GTD tasks file path - 这些变量将在导入后被覆盖
+# 默认值，但通常由主服务器模块设置
 BASE_DIR = os.getcwd()
-GTD_TASKS_FILE = os.path.join(BASE_DIR, 'gtd', 'tasks.md')
+GTD_TASKS_FILE = None  # 将在运行时设置
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
 
