@@ -396,6 +396,10 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
     def serve_file(self, file_path):
         """Serve a single file"""
         try:
+            # Check if it's a Markdown file - render as HTML instead of downloading
+            if file_path.endswith('.md') or file_path.endswith('.markdown'):
+                return self.serve_markdown_file(file_path)
+            
             with open(file_path, 'rb') as f:
                 content = f.read()
             
@@ -410,6 +414,129 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
             
         except Exception as e:
             self.send_error(404, f"无法读取文件: {str(e)}")
+
+    def serve_markdown_file(self, file_path):
+        """Render Markdown file as HTML"""
+        try:
+            import markdown
+            
+            # Read the markdown file
+            with open(file_path, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # Convert to HTML
+            html_content = markdown.markdown(md_content, extensions=['fenced_code', 'tables'])
+            
+            # Get relative path for navigation
+            rel_path = os.path.relpath(file_path, BASE_DIR)
+            parent_dir = os.path.dirname(rel_path)
+            if parent_dir == '.':
+                parent_dir = '/'
+            else:
+                parent_dir = '/' + parent_dir
+            
+            # Create HTML page with styling
+            html_page = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{os.path.basename(file_path)}</title>
+    <style>
+        body {{ 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 20px; 
+            line-height: 1.6;
+            color: #333;
+        }}
+        h1, h2, h3, h4, h5, h6 {{ 
+            color: #2c3e50; 
+            margin-top: 1.5em; 
+            margin-bottom: 0.8em;
+        }}
+        h1 {{ border-bottom: 2px solid #eee; padding-bottom: 0.3em; }}
+        h2 {{ border-bottom: 1px solid #eee; padding-bottom: 0.3em; }}
+        p {{ margin: 1em 0; }}
+        a {{ color: #3498db; text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
+        code {{ 
+            background: #f8f9fa; 
+            padding: 2px 4px; 
+            border-radius: 3px; 
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9em;
+        }}
+        pre {{ 
+            background: #f8f9fa; 
+            padding: 16px; 
+            border-radius: 6px; 
+            overflow-x: auto;
+            margin: 1em 0;
+        }}
+        pre code {{ 
+            background: none; 
+            padding: 0; 
+            border-radius: 0;
+            font-size: 0.95em;
+        }}
+        blockquote {{ 
+            border-left: 4px solid #ddd; 
+            padding-left: 16px; 
+            margin: 1em 0; 
+            color: #666;
+        }}
+        table {{ 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 1em 0;
+        }}
+        th, td {{ 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left;
+        }}
+        th {{ background: #f8f9fa; }}
+        tr:nth-child(even) {{ background: #f9f9f9; }}
+        ul, ol {{ padding-left: 2em; margin: 1em 0; }}
+        li {{ margin: 0.5em 0; }}
+        .nav-link {{ 
+            background: #6c757d; 
+            color: white; 
+            padding: 8px 12px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            display: inline-block;
+            margin-bottom: 20px;
+        }}
+        .nav-link:hover {{ background: #5a6268; }}
+    </style>
+</head>
+<body>
+    <a href="{parent_dir}" class="nav-link">🏠 返回上级目录</a>
+    <div class="markdown-content">
+        {html_content}
+    </div>
+</body>
+</html>"""
+            
+            self.send_response(200)
+            self.send_header("Content-type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(html_page.encode('utf-8'))))
+            self.end_headers()
+            self.wfile.write(html_page.encode('utf-8'))
+            
+        except ImportError:
+            # Fallback to plain text if markdown module not available
+            with open(file_path, 'rb') as f:
+                content = f.read()
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
+        except Exception as e:
+            self.send_error(404, f"无法读取Markdown文件: {str(e)}")
 
     def guess_type(self, path):
         """Simple MIME type guessing"""
@@ -431,6 +558,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
             return 'image/x-icon'
         elif path.endswith('.txt'):
             return 'text/plain'
+        elif path.endswith('.md') or path.endswith('.markdown'):
+            return 'text/markdown'
         else:
             return 'application/octet-stream'
 
