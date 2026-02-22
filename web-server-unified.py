@@ -26,8 +26,8 @@ try:
 except ImportError:
     BEAUTIFULSOUP_AVAILABLE = False
 
-# 设置工作目录 - 使用当前目录
-BASE_DIR = os.getcwd()
+# 设置工作目录 - 支持通过环境变量 WEB_ROOT 配置，默认为 /var/www/html
+BASE_DIR = os.environ.get('WEB_ROOT', '/var/www/html')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
 # 导入 GTD 模块
