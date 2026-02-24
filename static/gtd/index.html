@@ -554,7 +554,86 @@
                     }
                 });
                 const data = await response.json();
-                tasks = data.tasks || [];
+                
+                // Map GTD categories to board columns
+                // projects + next_actions → todo, waiting_for → doing, completed → done
+                tasks = [];
+                
+                // Add projects (incomplete)
+                if (data.projects) {
+                    data.projects.forEach((task, idx) => {
+                        if (!task.completed) {
+                            tasks.push({
+                                id: `proj-${idx}`,
+                                title: task.text,
+                                status: 'todo',
+                                priority: 'medium',
+                                category: 'Projects'
+                            });
+                        }
+                    });
+                }
+                
+                // Add next actions
+                if (data.next_actions) {
+                    data.next_actions.forEach((task, idx) => {
+                        if (!task.completed) {
+                            tasks.push({
+                                id: `next-${idx}`,
+                                title: task.text,
+                                status: 'todo',
+                                priority: task.comments.some(c => c.includes('优先级高')) ? 'high' : 'medium',
+                                category: 'Next Actions'
+                            });
+                        }
+                    });
+                }
+                
+                // Add waiting for (in progress)
+                if (data.waiting_for) {
+                    data.waiting_for.forEach((task, idx) => {
+                        if (!task.completed) {
+                            tasks.push({
+                                id: `wait-${idx}`,
+                                title: task.text,
+                                status: 'doing',
+                                priority: 'low',
+                                category: 'Waiting For'
+                            });
+                        }
+                    });
+                }
+                
+                // Add someday/maybe
+                if (data.someday_maybe) {
+                    data.someday_maybe.forEach((task, idx) => {
+                        if (!task.completed) {
+                            tasks.push({
+                                id: `some-${idx}`,
+                                title: task.text,
+                                status: 'todo',
+                                priority: 'low',
+                                category: 'Someday/Maybe'
+                            });
+                        }
+                    });
+                }
+                
+                // Add completed tasks
+                if (data.projects) {
+                    data.projects.forEach((task, idx) => {
+                        if (task.completed) {
+                            tasks.push({
+                                id: `proj-done-${idx}`,
+                                title: task.text,
+                                status: 'done',
+                                priority: 'low',
+                                category: 'Projects'
+                            });
+                        }
+                    });
+                }
+                
                 renderBoard();
                 updateStats();
             } catch (error) {
@@ -590,7 +669,7 @@
 
         function renderTaskCard(task) {
             const priorityClass = `priority-${task.priority || 'low'}`;
-            const dateStr = task.date ? new Date(task.date).toLocaleDateString() : '';
+            const categoryBadge = task.category ? `<span class="task-tag"><i class="fas fa-folder"></i> ${task.category}</span>` : '';
             
             return `
                 <div class="task-card ${priorityClass}">
@@ -604,7 +683,7 @@
                     </div>
                     <div class="task-title">${escapeHtml(task.title)}</div>
                     <div class="task-meta">
-                        ${dateStr ? `<span class="task-tag"><i class="fas fa-calendar"></i> ${dateStr}</span>` : ''}
+                        ${categoryBadge}
                         <span class="task-tag"><i class="fas fa-flag"></i> ${task.priority || 'Low'}</span>
                     </div>
                 </div>
@@ -615,17 +694,12 @@
             const total = tasks.length;
             const completed = tasks.filter(t => t.status === 'done').length;
             const important = tasks.filter(t => t.priority === 'high').length;
-            const today = tasks.filter(t => {
-                if (!t.date) return false;
-                const taskDate = new Date(t.date).toDateString();
-                const todayDate = new Date().toDateString();
-                return taskDate === todayDate;
-            }).length;
+            const todo = tasks.filter(t => t.status === 'todo').length;
 
             document.getElementById('total-tasks').textContent = total;
             document.getElementById('completed-tasks').textContent = completed;
             document.getElementById('important-count').textContent = important;
-            document.getElementById('today-count').textContent = today;
+            document.getElementById('today-count').textContent = todo;
         }
 
         function openQuickAdd() {
