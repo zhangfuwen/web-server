@@ -8,18 +8,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #7209b7;
-            --success: #4cc9f0;
-            --warning: #f72585;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --light-gray: #e9ecef;
-            --border-radius: 8px;
-            --shadow: 0 2px 10px rgba(0,0,0,0.1);
-            --transition: all 0.2s ease;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --gray-900: #0f172a;
+            --gray-800: #1e293b;
+            --gray-700: #334155;
+            --gray-600: #475569;
+            --gray-500: #64748b;
+            --gray-400: #94a3b8;
+            --gray-300: #cbd5e1;
+            --gray-200: #e2e8f0;
+            --gray-100: #f1f5f9;
+            --gray-50: #f8fafc;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --radius-sm: 6px;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
         }
 
         * {
@@ -29,1438 +45,650 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 16px;
-            color: var(--dark);
+            color: var(--gray-900);
+            line-height: 1.6;
         }
 
-        .desktop-container {
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
             max-width: 1600px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 240px 1fr;
-            gap: 20px;
-            height: calc(100vh - 32px);
+            min-height: 100vh;
+            background: var(--white);
+            box-shadow: var(--shadow-xl);
         }
 
+        /* Sidebar */
         .sidebar {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            padding: 20px;
+            background: linear-gradient(180deg, var(--gray-900) 0%, var(--gray-800) 100%);
+            color: var(--white);
+            padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 24px;
         }
 
-        .sidebar-header {
-            text-align: center;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--light-gray);
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--gray-700);
         }
 
-        .sidebar-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 6px;
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: var(--radius-lg);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            font-size: 20px;
         }
 
-        .sidebar-header p {
-            font-size: 0.85rem;
-            color: var(--gray);
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .category-list {
+        .nav-section {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .category-item {
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            background: var(--light);
-            border: 1px solid transparent;
-            border-radius: 6px;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius);
             cursor: pointer;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: var(--transition);
+            transition: all 0.2s;
+            color: var(--gray-300);
+            text-decoration: none;
         }
 
-        .category-item:hover {
-            background: white;
-            border-color: var(--primary);
-            transform: translateX(2px);
+        .nav-item:hover {
+            background: var(--gray-700);
+            color: var(--white);
         }
 
-        .category-item.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 2px 8px rgba(67, 97, 238, 0.2);
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
         }
 
-        .category-item i {
-            font-size: 1rem;
+        .nav-item i {
             width: 20px;
             text-align: center;
         }
 
-        .category-count {
+        .nav-badge {
             margin-left: auto;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 0.75rem;
+            background: var(--danger);
+            color: var(--white);
+            font-size: 11px;
             font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
         }
 
+        .stats-card {
+            background: var(--gray-700);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-top: auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 4px;
+        }
+
+        /* Main Content */
         .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            background: var(--gray-50);
+            padding: 32px;
+            overflow-y: auto;
         }
 
-        .header-bar {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            padding: 16px 20px;
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 32px;
         }
 
-        .category-title {
-            font-size: 1.5rem;
+        .header-title {
+            font-size: 28px;
             font-weight: 700;
-            color: var(--primary);
-            display: flex;
+            color: var(--gray-900);
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        .btn {
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .category-title i {
-            background: var(--primary);
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-        }
-
-        .search-bar {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .search-input {
-            padding: 10px 14px;
-            border: 1px solid var(--light-gray);
-            border-radius: 6px;
-            font-size: 0.9rem;
-            width: 250px;
-            transition: var(--transition);
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
-        }
-
-        .add-task-btn {
-            padding: 10px 20px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            font-weight: 500;
+            font-size: 14px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            transition: all 0.2s;
+            border: none;
+            outline: none;
         }
 
-        .add-task-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(67, 97, 238, 0.2);
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            box-shadow: var(--shadow-md);
         }
 
-        .content-area {
-            flex: 1;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+
+        /* Task Board */
+        .task-board {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
         }
 
         .task-column {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
+            background: var(--white);
+            border-radius: var(--radius-lg);
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            box-shadow: var(--shadow-md);
         }
 
-        .task-column-header {
+        .column-header {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
+            margin-bottom: 16px;
             padding-bottom: 12px;
-            border-bottom: 1px solid var(--light-gray);
+            border-bottom: 2px solid var(--gray-200);
         }
 
-        .task-column-title {
-            font-size: 1.1rem;
+        .column-title {
+            font-size: 16px;
             font-weight: 600;
-            color: var(--dark);
+            color: var(--gray-700);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .task-input-container {
-            background: var(--light);
-            padding: 16px;
-            border-radius: var(--border-radius);
-            border: 1px dashed var(--light-gray);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .task-input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .task-input-group label {
+        .column-count {
+            background: var(--gray-200);
+            color: var(--gray-600);
+            font-size: 12px;
             font-weight: 600;
-            color: var(--dark);
-            font-size: 0.85rem;
-        }
-
-        .task-input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--light-gray);
-            border-radius: 6px;
-            font-size: 0.95rem;
-            transition: var(--transition);
-            background: white;
-        }
-
-        .task-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
-        }
-
-        .comment-toggle {
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            color: var(--gray);
-            font-size: 0.85rem;
-            transition: var(--transition);
-        }
-
-        .comment-toggle:hover {
-            color: var(--primary);
-        }
-
-        .comment-toggle i {
-            font-size: 0.8rem;
-        }
-
-        .comment-input-container {
-            margin-top: 10px;
-            display: none;
-        }
-
-        .comment-input-container.show {
-            display: block;
+            padding: 4px 10px;
+            border-radius: 12px;
         }
 
         .task-list {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 6px;
-        }
-
-        .task-list::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .task-list::-webkit-scrollbar-track {
-            background: var(--light-gray);
-            border-radius: 2px;
-        }
-
-        .task-list::-webkit-scrollbar-thumb {
-            background: var(--gray);
-            border-radius: 2px;
-        }
-
-        .task-item {
-            background: white;
-            border: 1px solid var(--light-gray);
-            border-radius: var(--border-radius);
-            padding: 16px;
-            margin-bottom: 12px;
-            transition: var(--transition);
             display: flex;
             flex-direction: column;
             gap: 12px;
+            min-height: 200px;
         }
 
-        .task-item:hover {
-            border-color: var(--primary);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .task-item.completed {
-            opacity: 0.7;
-            border-color: #28a745;
-            background: #f8fff9;
-        }
-
-        .task-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-
-        .task-checkbox {
-            width: 20px;
-            height: 20px;
+        .task-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 16px;
             cursor: pointer;
-            margin-top: 2px;
-        }
-
-        .task-text {
-            flex: 1;
-            font-size: 1rem;
-            line-height: 1.4;
-            color: var(--dark);
-            word-break: break-word;
-        }
-
-        .task-text a {
-            color: var(--primary);
-            text-decoration: underline;
-            font-weight: 600;
-        }
-
-        .task-text a:hover {
-            color: var(--primary-dark);
-        }
-
-        .task-comments {
-            margin-top: 10px;
-            padding-top: 12px;
-            border-top: 1px solid var(--light-gray);
-        }
-
-        .comments-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .comments-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--gray);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .add-comment-btn {
-            background: var(--light);
-            color: var(--gray);
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .add-comment-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .comment-item {
-            background: var(--light);
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            color: var(--dark);
+            transition: all 0.2s;
             position: relative;
         }
 
-        .comment-actions {
-            position: absolute;
-            top: 6px;
-            right: 6px;
+        .task-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: var(--primary-light);
+        }
+
+        .task-card.priority-high {
+            border-left: 4px solid var(--danger);
+        }
+
+        .task-card.priority-medium {
+            border-left: 4px solid var(--warning);
+        }
+
+        .task-card.priority-low {
+            border-left: 4px solid var(--success);
+        }
+
+        .task-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-900);
+            margin-bottom: 8px;
+        }
+
+        .task-meta {
             display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .task-tag {
+            display: inline-flex;
+            align-items: center;
             gap: 4px;
+            padding: 4px 8px;
+            background: var(--gray-100);
+            border-radius: var(--radius-sm);
+        }
+
+        .task-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
             opacity: 0;
             transition: opacity 0.2s;
         }
 
-        .comment-item:hover .comment-actions {
+        .task-card:hover .task-actions {
             opacity: 1;
         }
 
-        .comment-edit-btn, .comment-delete-btn {
-            background: none;
+        .task-action-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
             border: none;
+            background: var(--gray-100);
+            color: var(--gray-600);
             cursor: pointer;
-            color: var(--gray);
-            font-size: 0.75rem;
-            padding: 2px 4px;
-            border-radius: 3px;
-            transition: var(--transition);
-        }
-
-        .comment-edit-btn:hover {
-            color: var(--primary);
-            background: rgba(67, 97, 238, 0.1);
-        }
-
-        .comment-delete-btn:hover {
-            color: var(--warning);
-            background: rgba(247, 37, 133, 0.1);
-        }
-
-        .comment-timestamp {
-            font-size: 0.75rem;
-            color: var(--gray);
-            margin-top: 4px;
-            font-style: italic;
-        }
-
-        .comment-form-container {
-            margin-top: 12px;
-            padding: 12px;
-            background: var(--light);
-            border-radius: var(--border-radius);
-            border: 1px solid var(--light-gray);
-            display: none;
-        }
-
-        .comment-form-container.show {
-            display: block;
-        }
-
-        .comment-form {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
-        .comment-input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--light-gray);
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 60px;
-            transition: var(--transition);
-            background: white;
-        }
-
-        .comment-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
-        }
-
-        .comment-form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-        }
-
-        .comment-save-btn {
-            padding: 8px 16px;
+        .task-action-btn:hover {
             background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: var(--transition);
+            color: var(--white);
+        }
+
+        /* Quick Add */
+        .quick-add {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .quick-add-input {
             display: flex;
+            gap: 12px;
             align-items: center;
-            gap: 5px;
         }
 
-        .comment-save-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
+        .quick-add-input input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
         }
 
-        .comment-cancel-btn {
-            padding: 8px 16px;
-            background: var(--light);
-            color: var(--gray);
-            border: 1px solid var(--light-gray);
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .quick-add-input input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
-        .comment-cancel-btn:hover {
-            background: white;
-            border-color: var(--gray);
-        }
-
-        .task-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .task-delete {
-            background: var(--warning);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .task-delete:hover {
-            background: #d61a70;
-            transform: translateY(-1px);
-        }
-
+        /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 40px 16px;
-            color: var(--gray);
+            padding: 48px 24px;
+            color: var(--gray-500);
         }
 
         .empty-state i {
-            font-size: 2.5rem;
+            font-size: 48px;
             margin-bottom: 16px;
-            color: var(--light-gray);
+            opacity: 0.5;
         }
 
-        .empty-state h3 {
-            font-size: 1.1rem;
-            margin-bottom: 8px;
-            color: var(--dark);
+        .empty-state p {
+            font-size: 14px;
         }
 
-        .status-bar {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            padding: 12px 20px;
-            text-align: center;
-            color: var(--gray);
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
 
-        .stats {
-            display: flex;
-            gap: 20px;
-            font-size: 0.85rem;
-            color: var(--gray);
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
         }
 
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-400);
+            border-radius: 4px;
         }
 
-        @media (max-width: 1200px) {
-            .desktop-container {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            
-            .content-area {
-                grid-template-columns: 1fr;
-            }
-            
-            .search-input {
-                width: 200px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .desktop-container {
-                gap: 12px;
-            }
-            
-            .header-bar {
-                flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-            }
-            
-            .search-bar {
-                width: 100%;
-            }
-            
-            .search-input {
-                width: 100%;
-            }
-            
-            .stats {
-                flex-direction: column;
-                gap: 8px;
-            }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
         }
     </style>
 </head>
 <body>
-    <div class="desktop-container">
+    <div class="app-container">
         <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h1><i class="fas fa-check-circle"></i> GTD Desktop</h1>
-                <p>Modern task management for desktop</p>
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <span class="logo-text">GTD Desktop</span>
             </div>
-            
-            <div class="category-list">
-                <div class="category-item active" data-category="projects">
-                    <i class="fas fa-project-diagram"></i>
-                    <span>Projects</span>
-                    <span class="category-count" id="projects-count">0</span>
-                </div>
-                <div class="category-item" data-category="next-actions">
-                    <i class="fas fa-tasks"></i>
-                    <span>Next Actions</span>
-                    <span class="category-count" id="next-actions-count">0</span>
-                </div>
-                <div class="category-item" data-category="waiting-for">
+
+            <nav class="nav-section">
+                <div class="nav-label">Views</div>
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-columns"></i>
+                    <span>Board</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-list"></i>
+                    <span>List</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Calendar</span>
+                </a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-label">Filters</div>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-star"></i>
+                    <span>Important</span>
+                    <span class="nav-badge" id="important-count">0</span>
+                </a>
+                <a href="#" class="nav-item">
                     <i class="fas fa-clock"></i>
-                    <span>Waiting For</span>
-                    <span class="category-count" id="waiting-for-count">0</span>
-                </div>
-                <div class="category-item" data-category="someday-maybe">
-                    <i class="fas fa-lightbulb"></i>
-                    <span>Someday/Maybe</span>
-                    <span class="category-count" id="someday-maybe-count">0</span>
+                    <span>Today</span>
+                    <span class="nav-badge" id="today-count">0</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-flag"></i>
+                    <span>Overdue</span>
+                    <span class="nav-badge" id="overdue-count">0</span>
+                </a>
+            </nav>
+
+            <div class="stats-card">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-tasks">0</div>
+                        <div class="stat-label">Total Tasks</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="completed-tasks">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="status-bar">
-                <div class="stats">
-                    <div class="stat-item"><i class="fas fa-check-circle"></i> <span id="completed-count">0</span> completed</div>
-                    <div class="stat-item"><i class="fas fa-list"></i> <span id="total-count">0</span> total tasks</div>
-                </div>
-            </div>
-        </div>
+        </aside>
 
         <!-- Main Content -->
-        <div class="main-content">
-            <div class="header-bar">
-                <div class="category-title">
-                    <i class="fas fa-project-diagram"></i>
-                    <span>Projects</span>
+        <main class="main-content">
+            <div class="header">
+                <div>
+                    <h1 class="header-title">My Tasks</h1>
+                    <p class="header-subtitle">Manage your tasks efficiently</p>
                 </div>
-                <div class="search-bar">
-                    <input type="text" class="search-input" placeholder="Search tasks..." id="search-input">
-                    <button class="add-task-btn" onclick="focusTaskInput()">
-                        <i class="fas fa-plus"></i> Add Task
+                <button class="btn btn-primary" onclick="openQuickAdd()">
+                    <i class="fas fa-plus"></i>
+                    Add Task
+                </button>
+            </div>
+
+            <!-- Quick Add -->
+            <div class="quick-add" id="quick-add" style="display: none;">
+                <div class="quick-add-input">
+                    <input type="text" id="new-task-input" placeholder="What needs to be done?" onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" onclick="addTask()">
+                        <i class="fas fa-plus"></i>
+                        Add
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeQuickAdd()">
+                        Cancel
                     </button>
                 </div>
             </div>
 
-            <div class="content-area">
-                <!-- Active Tasks Column -->
-                <div class                <div class="task-column">
-                    <div class="task-column-header">
-                        <h3 class="task-column-title"><i class="fas fa-circle text-success"></i> Active Tasks</h3>
-                        <span class="category-count" id="active-count">0</span>
-                    </div>
-                    
-                    <div class="task-input-container">
-                        <div class="task-input-group">
-                            <label for="task-input">Task Description</label>
-                            <input type="text" id="task-input" class="task-input" placeholder="Enter task description... Use [title](url) for links">
-                        </div>
-                        
-                        <div class="comment-toggle" onclick="toggleCommentInput()">
-                            <i class="fas fa-plus-circle"></i>
-                            <span>Add comment (optional)</span>
-                        </div>
-                        
-                        <div class="comment-input-container" id="comment-input-container">
-                            <div class="task-input-group">
-                                <label for="task-comment">Comment</label>
-                                <input type="text" id="task-comment" class="task-input" placeholder="Add notes or context...">
-                            </div>
-                        </div>
-                        
-                        <button class="add-task-btn" onclick="addTask()">
-                            <i class="fas fa-plus"></i> Add Task
-                        </button>
-                    </div>
-                    
-                    <div class="task-list" id="active-tasks-list">
-                        <div class="empty-state">
-                            <i class="fas fa-tasks"></i>
-                            <h3>No active tasks</h3>
-                            <p>Add your first task to get started!</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Completed Tasks Column -->
-                <div class="task-column">
-                    <div class="task-column-header">
-                        <h3 class="task-column-title"><i class="fas fa-check-circle text-success"></i> Completed Tasks</h3>
-                        <span class="category-count" id="completed-tasks-count">0</span>
-                    </div>
-                    
-                    <div class="task-list" id="completed-tasks-list">
-                        <div class="empty-state">
-                            <i class="fas fa-check-circle"></i>
-                            <h3>No completed tasks</h3>
-                            <p>Complete some tasks to see them here!</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Task Board -->
+            <div class="task-board" id="task-board">
+                <!-- Columns will be populated by JavaScript -->
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        // Category mapping
-        const categoryMap = {
-            'projects': '# Projects',
-            'next-actions': '# Next Actions',
-            'waiting-for': '# Waiting For',
-            'someday-maybe': '# Someday/Maybe'
-        };
+        let tasks = [];
+        let columns = [
+            { id: 'todo', title: 'To Do', icon: 'fa-circle', color: '#64748b' },
+            { id: 'doing', title: 'In Progress', icon: 'fa-spinner', color: '#f59e0b' },
+            { id: 'done', title: 'Done', icon: 'fa-check-circle', color: '#10b981' }
+        ];
 
-        let tasks = {
-            'projects': [],
-            'next-actions': [],
-            'waiting-for': [],
-            'someday-maybe': []
-        };
+        // Load tasks on page load
+        document.addEventListener('DOMContentLoaded', loadTasks);
 
-        let currentCategory = 'projects';
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Category switching
-            document.querySelectorAll('.category-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
-                    item.classList.add('active');
-                    currentCategory = item.dataset.category;
-                    updateCategoryTitle();
-                    renderAllTasks();
-                });
-            });
-
-            // Search functionality
-            document.getElementById('search-input').addEventListener('input', function(e) {
-                filterTasks(e.target.value);
-            });
-
-            // Enter key support
-            document.getElementById('task-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    addTask();
-                }
-            });
-
-            // Load tasks
-            loadTasks();
-        });
-
-        // Toggle comment input
-        function toggleCommentInput() {
-            const container = document.getElementById('comment-input-container');
-            const toggle = document.querySelector('.comment-toggle');
-            
-            if (container.classList.contains('show')) {
-                container.classList.remove('show');
-                toggle.innerHTML = '<i class="fas fa-plus-circle"></i><span>Add comment (optional)</span>';
-            } else {
-                container.classList.add('show');
-                toggle.innerHTML = '<i class="fas fa-minus-circle"></i><span>Hide comment</span>';
-                document.getElementById('task-comment').focus();
-            }
-        }
-
-        // Focus task input
-        function focusTaskInput() {
-            document.getElementById('task-input').focus();
-        }
-
-        // Update category title in header
-        function updateCategoryTitle() {
-            const titles = {
-                'projects': '<i class="fas fa-project-diagram"></i> Projects',
-                'next-actions': '<i class="fas fa-tasks"></i> Next Actions',
-                'waiting-for': '<i class="fas fa-clock"></i> Waiting For',
-                'someday-maybe': '<i class="fas fa-lightbulb"></i> Someday/Maybe'
-            };
-            document.querySelector('.category-title').innerHTML = titles[currentCategory];
-        }
-
-        // Get current timestamp
-        function getCurrentTimestamp() {
-            const now = new Date();
-            return now.toLocaleString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-        }
-
-        // Load tasks from server
         async function loadTasks() {
             try {
-                showStatus('Loading tasks...');
                 const response = await fetch('/api/gtd/tasks');
-                if (!response.ok) throw new Error('Failed to load tasks');
-                const text = await response.text();
-                parseTasksFromMarkdown(text);
-                renderAllTasks();
+                const data = await response.json();
+                tasks = data.tasks || [];
+                renderBoard();
                 updateStats();
-                showStatus('Tasks loaded successfully!');
             } catch (error) {
                 console.error('Error loading tasks:', error);
-                showStatus('Error loading tasks: ' + error.message);
             }
         }
 
-        // Parse markdown format into tasks object
-        function parseTasksFromMarkdown(markdown) {
-            const lines = markdown.split('\n');
-            let currentCategory = null;
-            
-            // Reset all tasks
-            tasks = {
-                'projects': [],
-                'next-actions': [],
-                'waiting-for': [],
-                'someday-maybe': []
-            };
-
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i].trim();
-                if (line === '# Projects') {
-                    currentCategory = 'projects';
-                } else if (line === '# Next Actions') {
-                    currentCategory = 'next-actions';
-                } else if (line === '# Waiting For') {
-                    currentCategory = 'waiting-for';
-                } else if (line === '# Someday/Maybe') {
-                    currentCategory = 'someday-maybe';
-                } else if (line.startsWith('- ') && currentCategory) {
-                    const taskText = line.substring(2).trim();
-                    let completed = false;
-                    let actualText = taskText;
-                    
-                    if (taskText.startsWith('[x] ')) {
-                        completed = true;
-                        actualText = taskText.substring(4).trim();
-                    } else if (taskText.startsWith('[ ] ')) {
-                        actualText = taskText.substring(4).trim();
-                    }
-                    
-                    // Check for comments on following lines
-                    let comments = [];
-                    let j = i + 1;
-                    while (j < lines.length && (lines[j].trim().startsWith('  • Comment:') || lines[j].trim().startsWith('  • Timestamp:'))) {
-                        if (lines[j].trim().startsWith('  • Comment:')) {
-                            const commentLine = lines[j].trim();
-                            const commentText = commentLine.substring('  • Comment:'.length).trim();
-                            
-                            // Check if there's a timestamp on the next line
-                            let timestamp = null;
-                            if (j + 1 < lines.length && lines[j + 1].trim().startsWith('  • Timestamp:')) {
-                                timestamp = lines[j + 1].trim().substring('  • Timestamp:'.length).trim();
-                                j++; // Skip timestamp line
-                            }
-                            
-                            comments.push({
-                                text: commentText,
-                                timestamp: timestamp || 'Unknown',
-                                id: Date.now() + Math.random()
-                            });
-                        }
-                        j++;
-                        i++; // Skip this line in main loop
-                    }
-                    
-                    tasks[currentCategory].push({
-                        text: actualText,
-                        completed: completed,
-                        comments: comments,
-                        createdAt: 'Unknown',
-                        completedAt: completed ? 'Unknown' : null,
-                        id: Date.now() + Math.random()
-                    });
-                }
-            }
-        }
-
-        // Render markdown links and URLs as clickable links
-        function renderTaskText(text) {
-            // First, handle Markdown links: [title](url)
-            let processedText = text.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, title, url) => {
-                const displayTitle = title || url;
-                return `<a href="${url}" target="_blank" title="${url}">${escapeHtml(displayTitle)}</a>`;
-            });
-            
-            // Then, handle bare URLs (http:// or https://)
-            const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
-            processedText = processedText.replace(urlRegex, (url) => {
-                // Check if this URL is already inside an anchor tag (from previous replacement)
-                if (processedText.includes(`<a href="${url}"`)) {
-                    return url; // Already handled as markdown link
-                }
-                
-                return `<a href="${url}" target="_blank" title="${url}">${escapeHtml(url)}</a>`;
-            });
-            
-            return processedText;
-        }
-
-        // Render tasks for current category
-        function renderAllTasks() {
-            const activeContainer = document.getElementById('active-tasks-list');
-            const completedContainer = document.getElementById('completed-tasks-list');
-            const taskList = tasks[currentCategory];
-            
-            // Separate active and completed tasks
-            const activeTasks = taskList.filter(task => !task.completed);
-            const completedTasks = taskList.filter(task => task.completed);
-            
-            // Update counts
-            document.getElementById('active-count').textContent = activeTasks.length;
-            document.getElementById('completed-tasks-count').textContent = completedTasks.length;
-            document.getElementById(`${currentCategory}-count`).textContent = taskList.length;
-            
-            // Render active tasks
-            if (activeTasks.length === 0) {
-                activeContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-tasks"></i>
-                        <h3>No active tasks</h3>
-                        <p>Add your first task to get started!</p>
-                    </div>
-                `;
-            } else {
-                activeContainer.innerHTML = '';
-                activeTasks.forEach((task, index) => {
-                    const taskIndex = taskList.indexOf(task);
-                    activeContainer.appendChild(createTaskElement(task, taskIndex));
-                });
-            }
-            
-            // Render completed tasks
-            if (completedTasks.length === 0) {
-                completedContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-check-circle"></i>
-                        <h3>No completed tasks</h3>
-                        <p>Complete some tasks to see them here!</p>
-                    </div>
-                `;
-            } else {
-                completedContainer.innerHTML = '';
-                completedTasks.forEach((task, index) => {
-                    const taskIndex = taskList.indexOf(task);
-                    completedContainer.appendChild(createTaskElement(task, taskIndex));
-                });
-            }
-        }
-
-        // Create task element
-        function createTaskElement(task, taskIndex) {
-            const taskElement = document.createElement('div');
-            taskElement.className = `task-item ${task.completed ? 'completed' : ''}`;
-            const renderedText = renderTaskText(task.text);
-            
-            // Comments HTML
-            let commentsHTML = '';
-            if (task.comments && task.comments.length > 0) {
-                const commentItems = task.comments.map((comment, commentIndex) => `
-                    <div class="comment-item">
-                        <div class="comment-actions">
-                            ${!task.completed ? `
-                                <button class="comment-edit-btn" onclick="editComment('${currentCategory}', ${taskIndex}, ${commentIndex})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="comment-delete-btn" onclick="deleteComment('${currentCategory}', ${taskIndex}, ${commentIndex})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                        ${escapeHtml(comment.text)}
-                        <div class="comment-timestamp">${comment.timestamp}</div>
-                    </div>
-                `).join('');
-                
-                commentsHTML = `
-                    <div class="task-comments">
-                        <div class="comments-header">
-                            <div class="comments-title"><i class="fas fa-comment"></i> Comments</div>
-                            ${!task.completed ? `
-                                <button class="add-comment-btn" onclick="showAddCommentForm('${currentCategory}', ${taskIndex})">
-                                    <i class="fas fa-plus"></i> Add Comment
-                                </button>
-                            ` : ''}
-                        </div>
-                        ${commentItems}
-                    </div>
-                `;
-            } else if (!task.completed) {
-                commentsHTML = `
-                    <div class="task-comments">
-                        <div class="comments-header">
-                            <div class="comments-title"><i class="fas fa-comment"></i> No comments yet</div>
-                            <button class="add-comment-btn" onclick="showAddCommentForm('${currentCategory}', ${taskIndex})">
-                                <i class="fas fa-plus"></i> Add Comment
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Comment form HTML (only for incomplete tasks)
-            let commentFormHTML = '';
-            if (!task.completed) {
-                commentFormHTML = `
-                    <div class="comment-form-container" id="comment-form-${currentCategory}-${taskIndex}">
-                        <div class="comment-form">
-                            <textarea class="comment-input" placeholder="Type your comment here..."
-                                      data-category="${currentCategory}"
-                                      data-task-index="${taskIndex}"
-                                      data-mode="add"></textarea>
-                            <div class="comment-form-actions">
-                                <button class="comment-cancel-btn" onclick="hideCommentForm(this)">
-                                    <i class="fas fa-times"></i> Cancel
-                                </button>
-                                <button class="comment-save-btn" onclick="saveCommentFromForm(this.parentElement.previousElementSibling)">
-                                    <i class="fas fa-check"></i> Save
-                                </button>
+        function renderBoard() {
+            const board = document.getElementById('task-board');
+            board.innerHTML = columns.map(column => {
+                const columnTasks = tasks.filter(t => t.status === column.id);
+                return `
+                    <div class="task-column">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <i class="fas ${column.icon}" style="color: ${column.color}"></i>
+                                ${column.title}
                             </div>
+                            <span class="column-count">${columnTasks.length}</span>
+                        </div>
+                        <div class="task-list">
+                            ${columnTasks.length === 0 ? `
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>No tasks yet</p>
+                                </div>
+                            ` : columnTasks.map(task => renderTaskCard(task)).join('')}
                         </div>
                     </div>
                 `;
-            }
+            }).join('');
+        }
+
+        function renderTaskCard(task) {
+            const priorityClass = `priority-${task.priority || 'low'}`;
+            const dateStr = task.date ? new Date(task.date).toLocaleDateString() : '';
             
-            taskElement.innerHTML = `
-                <div class="task-header">
-                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}
-                           onchange="toggleTask('${currentCategory}', ${taskIndex})">
-                    <span class="task-text">${renderedText}</span>
-                </div>
-                ${commentsHTML}
-                ${commentFormHTML}
-                <div class="task-actions">
-                    <button class="task-delete" onclick="deleteTask('${currentCategory}', ${taskIndex})">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
+            return `
+                <div class="task-card ${priorityClass}">
+                    <div class="task-actions">
+                        <button class="task-action-btn" onclick="editTask('${task.id}')" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="task-action-btn" onclick="deleteTask('${task.id}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="task-title">${escapeHtml(task.title)}</div>
+                    <div class="task-meta">
+                        ${dateStr ? `<span class="task-tag"><i class="fas fa-calendar"></i> ${dateStr}</span>` : ''}
+                        <span class="task-tag"><i class="fas fa-flag"></i> ${task.priority || 'Low'}</span>
+                    </div>
                 </div>
             `;
-            
-            return taskElement;
         }
 
-        // Add a new task
-        async function addTask() {
-            const input = document.getElementById('task-input');
-            const commentInput = document.getElementById('task-comment');
-            const commentContainer = document.getElementById('comment-input-container');
-            const text = input.value.trim();
-            const comment = commentInput.value.trim();
-            
-            if (!text) return;
-
-            const newTask = { 
-                text: text, 
-                completed: false, 
-                comments: [],
-                createdAt: getCurrentTimestamp(),
-                completedAt: null,
-                id: Date.now() + Math.random()
-            };
-            
-            if (comment) {
-                newTask.comments.push({
-                    text: comment,
-                    timestamp: getCurrentTimestamp(),
-                    id: Date.now() + Math.random()
-                });
-            }
-            
-            tasks[currentCategory].push(newTask);
-            renderAllTasks();
-            updateStats();
-            
-            // Reset form
-            input.value = '';
-            commentInput.value = '';
-            commentContainer.classList.remove('show');
-            document.querySelector('.comment-toggle').innerHTML = '<i class="fas fa-plus-circle"></i><span>Add comment (optional)</span>';
-            input.focus();
-            
-            await saveTasks();
-            showStatus('Task added successfully!');
-        }
-
-        // Toggle task completion
-        async function toggleTask(category, index) {
-            const task = tasks[category][index];
-            task.completed = !task.completed;
-            if (task.completed && !task.completedAt) {
-                task.completedAt = getCurrentTimestamp();
-            }
-            renderAllTasks();
-            updateStats();
-            await saveTasks();
-            showStatus('Task updated!');
-        }
-
-        // Delete a task
-        async function deleteTask(category, index) {
-            if (confirm('Are you sure you want to delete this task?')) {
-                tasks[category].splice(index, 1);
-                renderAllTasks();
-                updateStats();
-                await saveTasks();
-                showStatus('Task deleted!');
-            }
-        }
-
-        // Show add comment form
-        function showAddCommentForm(category, taskIndex) {
-            // Hide any other open comment forms
-            document.querySelectorAll('.comment-form-container.show').forEach(container => {
-                container.classList.remove('show');
-            });
-            
-            // Find the task element and show comment form
-            const taskElements = document.querySelectorAll('.task-item');
-            let targetElement = null;
-            
-            taskElements.forEach(element => {
-                const checkbox = element.querySelector('.task-checkbox');
-                if (checkbox && checkbox.onchange && checkbox.onchange.toString().includes(`toggleTask('${category}', ${taskIndex})`)) {
-                    targetElement = element;
-                }
-            });
-            
-            if (targetElement) {
-                const commentForm = targetElement.querySelector('.comment-form-container');
-                if (commentForm) {
-                    commentForm.classList.add('show');
-                    const textarea = commentForm.querySelector('.comment-input');
-                    if (textarea) {
-                        textarea.value = '';
-                        textarea.focus();
-                        textarea.dataset.mode = 'add';
-                        textarea.dataset.category = category;
-                        textarea.dataset.taskIndex = taskIndex;
-                    }
-                }
-            }
-        }
-
-        // Show edit comment form
-        function showEditCommentForm(category, taskIndex, commentIndex) {
-            // Hide any other open comment forms
-            document.querySelectorAll('.comment-form-container.show').forEach(container => {
-                container.classList.remove('show');
-            });
-            
-            // Find the task element and show comment form with existing text
-            const taskElements = document.querySelectorAll('.task-item');
-            let targetElement = null;
-            
-            taskElements.forEach(element => {
-                const checkbox = element.querySelector('.task-checkbox');
-                if (checkbox && checkbox.onchange && checkbox.onchange.toString().includes(`toggleTask('${category}', ${taskIndex})`)) {
-                    targetElement = element;
-                }
-            });
-            
-            if (targetElement) {
-                const commentForm = targetElement.querySelector('.comment-form-container');
-                if (commentForm) {
-                    commentForm.classList.add('show');
-                    const textarea = commentForm.querySelector('.comment-input');
-                    if (textarea) {
-                        const task = tasks[category][taskIndex];
-                        const comment = task.comments[commentIndex];
-                        textarea.value = comment.text;
-                        textarea.focus();
-                        textarea.dataset.mode = 'edit';
-                        textarea.dataset.category = category;
-                        textarea.dataset.taskIndex = taskIndex;
-                        textarea.dataset.commentIndex = commentIndex;
-                    }
-                }
-            }
-        }
-
-        // Save comment from form
-        async function saveCommentFromForm(textarea) {
-            const mode = textarea.dataset.mode;
-            const category = textarea.dataset.category;
-            const taskIndex = parseInt(textarea.dataset.taskIndex);
-            const commentText = textarea.value.trim();
-            
-            if (!commentText) {
-                hideCommentForm(textarea);
-                return;
-            }
-            
-            if (mode === 'add') {
-                await addComment(category, taskIndex, commentText);
-            } else if (mode === 'edit') {
-                const commentIndex = parseInt(textarea.dataset.commentIndex);
-                await updateComment(category, taskIndex, commentIndex, commentText);
-            }
-            
-            hideCommentForm(textarea);
-        }
-
-        // Hide comment form
-        function hideCommentForm(button) {
-            const container = button.closest('.comment-form-container');
-            if (container) {
-                container.classList.remove('show');
-            }
-        }
-
-        // Add comment to task
-        async function addComment(category, taskIndex, commentText) {
-            const task = tasks[category][taskIndex];
-            task.comments.push({
-                text: commentText,
-                timestamp: getCurrentTimestamp(),
-                id: Date.now() + Math.random()
-            });
-            renderAllTasks();
-            await saveTasks();
-            showStatus('Comment added!');
-        }
-
-        // Edit comment (legacy function, now uses showEditCommentForm)
-        function editComment(category, taskIndex, commentIndex) {
-            showEditCommentForm(category, taskIndex, commentIndex);
-        }
-
-        // Update comment
-        async function updateComment(category, taskIndex, commentIndex, newText) {
-            const task = tasks[category][taskIndex];
-            task.comments[commentIndex].text = newText;
-            task.comments[commentIndex].timestamp = getCurrentTimestamp();
-            renderAllTasks();
-            await saveTasks();
-            showStatus('Comment updated!');
-        }
-
-        // Delete comment
-        async function deleteComment(category, taskIndex, commentIndex) {
-            if (confirm('Are you sure you want to delete this comment?')) {
-                const task = tasks[category][taskIndex];
-                task.comments.splice(commentIndex, 1);
-                renderAllTasks();
-                await saveTasks();
-                showStatus('Comment deleted!');
-            }
-        }
-
-        // Filter tasks based on search query
-        function filterTasks(query) {
-            const taskItems = document.querySelectorAll('.task-item');
-            const searchTerm = query.toLowerCase();
-            
-            taskItems.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
-        }
-
-        // Update statistics
         function updateStats() {
-            let total = 0;
-            let completed = 0;
-            
-            Object.values(tasks).forEach(category => {
-                total += category.length;
-                completed += category.filter(task => task.completed).length;
-            });
-            
-            document.getElementById('total-count').textContent = total;
-            document.getElementById('completed-count').textContent = completed;
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.status === 'done').length;
+            const important = tasks.filter(t => t.priority === 'high').length;
+            const today = tasks.filter(t => {
+                if (!t.date) return false;
+                const taskDate = new Date(t.date).toDateString();
+                const todayDate = new Date().toDateString();
+                return taskDate === todayDate;
+            }).length;
+
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('completed-tasks').textContent = completed;
+            document.getElementById('important-count').textContent = important;
+            document.getElementById('today-count').textContent = today;
         }
 
-        // Save tasks to server
-        async function saveTasks() {
-            try {
-                showStatus('Saving tasks...');
-                const markdown = generateMarkdown();
-                const response = await fetch('/api/gtd/tasks', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'text/markdown'
-                    },
-                    body: markdown
-                });
-                if (!response.ok) throw new Error('Failed to save tasks');
-                showStatus('Tasks saved successfully!');
-            } catch (error) {
-                console.error('Error saving tasks:', error);
-                showStatus('Error saving tasks: ' + error.message);
+        function openQuickAdd() {
+            document.getElementById('quick-add').style.display = 'block';
+            document.getElementById('new-task-input').focus();
+        }
+
+        function closeQuickAdd() {
+            document.getElementById('quick-add').style.display = 'none';
+            document.getElementById('new-task-input').value = '';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                addTask();
             }
         }
 
-        // Generate markdown from tasks object
-        function generateMarkdown() {
-            let markdown = '';
+        async function addTask() {
+            const input = document.getElementById('new-task-input');
+            const title = input.value.trim();
             
-            // Projects
-            markdown += '# Projects\n';
-            tasks.projects.forEach(task => {
-                const prefix = task.completed ? '[x] ' : '[ ] ';
-                markdown += `- ${prefix}${task.text}\n`;
-                if (task.comments && task.comments.length > 0) {
-                    task.comments.forEach(comment => {
-                        markdown += `  • Comment: ${comment.text}\n`;
-                        markdown += `  • Timestamp: ${comment.timestamp}\n`;
-                    });
+            if (!title) return;
+
+            try {
+                const response = await fetch('/api/gtd/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        status: 'todo',
+                        priority: 'medium',
+                        date: new Date().toISOString()
+                    })
+                });
+
+                if (response.ok) {
+                    input.value = '';
+                    closeQuickAdd();
+                    await loadTasks();
                 }
-            });
-            markdown += '\n';
-            
-            // Next Actions
-            markdown += '# Next Actions\n';
-            tasks['next-actions'].forEach(task => {
-                const prefix = task.completed ? '[x] ' : '[ ] ';
-                markdown += `- ${prefix}${task.text}\n`;
-                if (task.comments && task.comments.length > 0) {
-                    task.comments.forEach(comment => {
-                        markdown += `  • Comment: ${comment.text}\n`;
-                        markdown += `  • Timestamp: ${comment.timestamp}\n`;
-                    });
-                }
-            });
-            markdown += '\n';
-            
-            // Waiting For
-            markdown += '# Waiting For\n';
-            tasks['waiting-for'].forEach(task => {
-                const prefix = task.completed ? '[x] ' : '[ ] ';
-                markdown += `- ${prefix}${task.text}\n`;
-                if (task.comments && task.comments.length > 0) {
-                    task.comments.forEach(comment => {
-                        markdown += `  • Comment: ${comment.text}\n`;
-                        markdown += `  • Timestamp: ${comment.timestamp}\n`;
-                    });
-                }
-            });
-            markdown += '\n';
-            
-            // Someday/Maybe
-            markdown += '# Someday/Maybe\n';
-            tasks['someday-maybe'].forEach(task => {
-                const prefix = task.completed ? '[x] ' : '[ ] ';
-                markdown += `- ${prefix}${task.text}\n`;
-                if (task.comments && task.comments.length > 0) {
-                    task.comments.forEach(comment => {
-                        markdown += `  • Comment: ${comment.text}\n`;
-                        markdown += `  • Timestamp: ${comment.timestamp}\n`;
-                    });
-                }
-            });
-            
-            return markdown;
+            } catch (error) {
+                console.error('Error adding task:', error);
+            }
         }
 
-        // Helper function to escape HTML
+        async function deleteTask(taskId) {
+            if (!confirm('Delete this task?')) return;
+
+            try {
+                const response = await fetch('/api/gtd/tasks', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: taskId })
+                });
+
+                if (response.ok) {
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
+        }
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
-        }
-
-        // Show status message
-        function showStatus(message) {
-            const statusBar = document.querySelector('.status-bar');
-            const originalHTML = statusBar.innerHTML;
-            statusBar.innerHTML = `<div>${message}</div>`;
-            
-            // Clear status after 3 seconds
-            setTimeout(() => {
-                if (statusBar.innerHTML === `<div>${message}</div>`) {
-                    statusBar.innerHTML = originalHTML;
-                    updateStats();
-                }
-            }, 3000);
         }
     </script>
 </body>
