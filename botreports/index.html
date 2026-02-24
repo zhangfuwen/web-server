@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Reports - All Reports</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 15px;
+        }
+        .filter-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            margin: 5px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .filter-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .filter-btn.active {
+            background-color: #2c5aa0;
+            color: white;
+        }
+        .date-group {
+            margin-bottom: 30px;
+        }
+        .date-header {
+            background-color: #2c5aa0;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .report-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+            margin-bottom: 10px;
+            transition: background-color 0.2s;
+        }
+        .report-item:hover {
+            background-color: #f0f0f0;
+        }
+        .report-info {
+            flex-grow: 1;
+        }
+        .report-title {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .report-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-right: 5px;
+            color: white;
+        }
+        .type-daily-news {
+            background-color: #4CAF50;
+        }
+        .type-llm-memory {
+            background-color: #2196F3;
+        }
+        .type-kernel-patch {
+            background-color: #FF9800;
+        }
+        .type-nanobot {
+            background-color: #9C27B0;
+        }
+        .type-other {
+            background-color: #607D8B;
+        }
+        .report-links {
+            display: flex;
+            gap: 10px;
+        }
+        .report-link {
+            padding: 6px 14px;
+            background-color: #2c5aa0;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .report-link:hover {
+            background-color: #1e4a8a;
+        }
+        .no-reports {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+        .stats {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bot Reports</h1>
+        
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="daily-news">Daily News</button>
+            <button class="filter-btn" data-filter="llm-memory">LLM Memory</button>
+            <button class="filter-btn" data-filter="kernel-patch">Kernel Patches</button>
+            <button class="filter-btn" data-filter="nanobot">Nanobot</button>
+            <button class="filter-btn" data-filter="other">Other</button>
+        </div>
+        
+        <div class="stats" id="stats"></div>
+        <div id="reportsContainer">
+            <!-- Reports will be dynamically loaded here -->
+            <div class="no-reports">Loading reports...</div>
+        </div>
+    </div>
+
+    <script>
+        let allReports = [];
+        let currentFilter = 'all';
+
+        // Function to categorize reports
+        function getReportType(filename) {
+            if (filename.includes('-daily-news.html')) return 'daily-news';
+            if (filename.includes('llm-agent-memory-briefing')) return 'llm-memory';
+            if (filename.includes('kernel-ai-ml-patch-report') || filename.includes('kernel-ai-patch')) return 'kernel-patch';
+            if (filename.includes('nanobot')) return 'nanobot';
+            return 'other';
+        }
+
+        // Function to get a readable title for reports
+        function getReportTitle(filename, type) {
+            const dateMatch = filename.match(/(\d{4}-\d{2}-\d{2})/);
+            const date = dateMatch ? dateMatch[1] : '';
+            
+            switch(type) {
+                case 'daily-news':
+                    return `Daily News Brief - ${date}`;
+                case 'llm-memory':
+                    return `LLM/Agent Memory Research Briefing - ${date}`;
+                case 'kernel-patch':
+                    return `Linux Kernel AI Patch Analysis - ${date}`;
+                case 'nanobot':
+                    const nanoDate = filename.match(/(\d{4}-\d{2}-\d{2})/);
+                    return nanoDate ? `Nanobot Daily Report - ${nanoDate[1]}` : 'Nanobot Report';
+                default:
+                    // Clean up filename for display
+                    return filename.replace(/\.html$/, '').replace(/-/g, ' ')
+                        .replace(/\b\w/g, c => c.toUpperCase());
+            }
+        }
+
+        // Function to extract date from filename
+        function extractDate(filename) {
+            const dateMatch = filename.match(/(\d{4})-(\d{2})-(\d{2})/);
+            if (dateMatch) {
+                return new Date(dateMatch[1], dateMatch[2] - 1, dateMatch[3]);
+            }
+            
+            // Fallback: try to parse as a date from stats
+            const dateObj = new Date(filename);
+            if (!isNaN(dateObj.getTime())) {
+                return dateObj;
+            }
+            
+            return new Date(0); // Default to epoch if no date found
+        }
+
+        // Function to load reports
+        async function loadReports() {
+            try {
+                // Fetch the dynamically generated reports list from Python API
+                const response = await fetch('/api/bot-reports');
+                const reportsData = await response.json();
+                
+                // Create report objects
+                allReports = reportsData.map(item => {
+                    const type = getReportType(item.filename);
+                    const title = getReportTitle(item.filename, type);
+                    const date = new Date(parseInt(item.date) * 1000);
+                    
+                    return {
+                        filename: item.filename,
+                        type: type,
+                        title: title,
+                        date: date,
+                        formattedDate: date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })
+                    };
+                });
+                
+                // Sort all reports by date (newest first)
+                allReports.sort((a, b) => b.date - a.date);
+                
+                displayReports();
+                updateStats();
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('reportsContainer').innerHTML = 
+                    '<div class="no-reports">Error loading reports. Please try again later.</div>';
+            }
+        }
+
+        // Function to display reports
+        function displayReports() {
+            const container = document.getElementById('reportsContainer');
+            
+            // Filter reports based on current filter
+            const filteredReports = currentFilter === 'all' 
+                ? allReports 
+                : allReports.filter(r => r.type === currentFilter);
+            
+            if (filteredReports.length === 0) {
+                container.innerHTML = '<div class="no-reports">No reports found for the selected filter.</div>';
+                return;
+            }
+            
+            // Group reports by date
+            const groupedReports = {};
+            filteredReports.forEach(report => {
+                const dateKey = report.date.toDateString();
+                if (!groupedReports[dateKey]) {
+                    groupedReports[dateKey] = [];
+                }
+                groupedReports[dateKey].push(report);
+            });
+            
+            // Render grouped reports
+            let html = '';
+            Object.keys(groupedReports).sort((a, b) => new Date(b) - new Date(a)).forEach(dateKey => {
+                const reports = groupedReports[dateKey];
+                html += `
+                    <div class="date-group">
+                        <div class="date-header">${dateKey}</div>
+                        ${reports.map(report => `
+                            <div class="report-item" data-type="${report.type}">
+                                <div class="report-info">
+                                    <span class="report-type type-${report.type}">${getTypeLabel(report.type)}</span>
+                                    <div class="report-title">${report.title}</div>
+                                </div>
+                                <div class="report-links">
+                                    <a href="${report.filename}" class="report-link" target="_blank">View</a>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Function to get type label
+        function getTypeLabel(type) {
+            switch(type) {
+                case 'daily-news': return 'Daily News';
+                case 'llm-memory': return 'LLM Memory';
+                case 'kernel-patch': return 'Kernel';
+                case 'nanobot': return 'Nanobot';
+                default: return 'Other';
+            }
+        }
+
+        // Function to update stats
+        function updateStats() {
+            const stats = document.getElementById('stats');
+            const total = allReports.length;
+            const dailyNews = allReports.filter(r => r.type === 'daily-news').length;
+            const llmMemory = allReports.filter(r => r.type === 'llm-memory').length;
+            const kernel = allReports.filter(r => r.type === 'kernel-patch').length;
+            const nanobot = allReports.filter(r => r.type === 'nanobot').length;
+            const other = allReports.filter(r => r.type === 'other').length;
+            
+            stats.textContent = `Total: ${total} reports | Daily News: ${dailyNews} | LLM Memory: ${llmMemory} | Kernel: ${kernel} | Nanobot: ${nanobot} | Other: ${other}`;
+        }
+
+        // Filter button event listeners
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update active button
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Update filter and display
+                currentFilter = e.target.dataset.filter;
+                displayReports();
+            });
+        });
+
+        // Load reports when page loads
+        document.addEventListener('DOMContentLoaded', loadReports);
+    </script>
+</body>
+</html>

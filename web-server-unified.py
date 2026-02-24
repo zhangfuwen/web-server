@@ -103,6 +103,12 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
         if path == '/system-info':
             return self.serve_system_info()
         
+        # BotReports endpoints
+        elif path == '/api/bot-reports':
+            return self.serve_bot_reports_list()
+        elif path == '/BotReports' or path == '/BotReports/':
+            return self.serve_bot_reports_index()
+        
         # GTD API endpoints
         elif path == '/api/gtd/tasks':
             return self.serve_gtd_tasks()
@@ -849,6 +855,57 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
             
         except Exception as e:
             self.send_error(500, f"系统监控错误: {str(e)}")
+
+    def serve_bot_reports_list(self):
+        """Serve BotReports list as JSON"""
+        try:
+            bot_reports_dir = os.path.join(BASE_DIR, 'BotReports')
+            reports = []
+            
+            # Scan directory for HTML files (excluding index.html)
+            for filename in os.listdir(bot_reports_dir):
+                if filename.endswith('.html') and filename != 'index.html':
+                    file_path = os.path.join(bot_reports_dir, filename)
+                    if os.path.isfile(file_path):
+                        mtime = os.path.getmtime(file_path)
+                        reports.append({
+                            'filename': filename,
+                            'date': str(int(mtime))
+                        })
+            
+            # Sort by date (newest first)
+            reports.sort(key=lambda x: int(x['date']), reverse=True)
+            
+            # Send JSON response
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'no-cache')
+            self.end_headers()
+            self.wfile.write(json.dumps(reports, indent=4).encode('utf-8'))
+            
+        except Exception as e:
+            self.send_error(500, f"Error loading BotReports: {str(e)}")
+
+    def serve_bot_reports_index(self):
+        """Serve BotReports index.html"""
+        try:
+            # Serve from web_server project directory
+            index_path = os.path.join(os.path.dirname(__file__), 'botreports', 'index.html')
+            if os.path.exists(index_path):
+                with open(index_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'no-cache')
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_error(404, "BotReports index.html not found")
+        except Exception as e:
+            self.send_error(500, f"Error serving BotReports: {str(e)}")
+
 
 def run(port=8081, reloader=False):
     """运行服务器
