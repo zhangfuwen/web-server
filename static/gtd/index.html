@@ -210,10 +210,10 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 12px 20px;
+            padding: 10px 16px;
             border-radius: var(--radius);
             font-weight: 500;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
             border: none;
@@ -356,8 +356,8 @@
         }
 
         .task-action-btn {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: var(--radius-sm);
             border: none;
             background: var(--gray-100);
@@ -367,6 +367,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            font-size: 11px;
         }
 
         .task-action-btn:hover {
@@ -547,7 +548,11 @@
 
         async function loadTasks() {
             try {
-                const response = await fetch('/api/gtd/tasks');
+                const response = await fetch('/api/gtd/tasks', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 const data = await response.json();
                 tasks = data.tasks || [];
                 renderBoard();
