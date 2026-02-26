@@ -60,6 +60,179 @@
             box-shadow: var(--shadow-lg);
         }
 
+        .app-container.sidebar-hidden {
+            grid-template-columns: 0px 1fr;
+        }
+
+        .sidebar {
+            overflow-x: hidden;
+            transition: width 0.3s ease, opacity 0.3s ease;
+        }
+
+        .app-container.sidebar-hidden .sidebar {
+            width: 0;
+            opacity: 0;
+        }
+
+        /* Desktop Sidebar Toggle */
+        .desktop-sidebar-toggle {
+            position: fixed;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1000;
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.2s;
+        }
+
+        .desktop-sidebar-toggle:hover {
+            background: var(--primary-dark);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .app-container.sidebar-hidden .desktop-sidebar-toggle {
+            display: flex;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+
+            .app-container.sidebar-hidden {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 999;
+                width: 280px;
+                height: 100vh;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .desktop-sidebar-toggle {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 16px;
+                padding-top: 60px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .header-title {
+                font-size: 22px;
+            }
+
+            .task-board {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .task-column {
+                padding: 16px;
+            }
+
+            .modal {
+                margin: 16px;
+                max-height: calc(100vh - 32px);
+            }
+
+            .quick-add {
+                padding: 16px;
+            }
+
+            .quick-add-input {
+                flex-direction: column;
+            }
+
+            .quick-add-input input {
+                width: 100%;
+            }
+        }
+
+        /* Mobile Header with Menu Toggle */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: var(--gray-900);
+            color: var(--white);
+            align-items: center;
+            padding: 0 16px;
+            z-index: 998;
+            box-shadow: var(--shadow);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-header {
+                display: flex;
+            }
+        }
+
+        .menu-toggle {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: var(--white);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-title {
+            margin-left: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+
         /* Sidebar */
         .sidebar {
             background: linear-gradient(180deg, var(--gray-900) 0%, var(--gray-800) 100%);
@@ -593,12 +766,105 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--gray-500);
         }
+
+        /* Sorting Controls */
+        .sort-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: var(--white);
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .sort-controls {
+                padding: 10px 12px;
+                gap: 6px;
+            }
+
+            .sort-label {
+                width: 100%;
+                margin-bottom: 6px;
+            }
+
+            .sort-btn {
+                flex: 1;
+                min-width: calc(50% - 3px);
+                justify-content: center;
+                padding: 8px 10px;
+                font-size: 11px;
+            }
+
+            .sort-btn i {
+                display: none;
+            }
+        }
+
+        .sort-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-600);
+        }
+
+        .sort-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius);
+            background: var(--white);
+            color: var(--gray-700);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sort-btn:hover {
+            background: var(--gray-50);
+            border-color: var(--primary);
+        }
+
+        .sort-btn.active {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+        }
+
+        .sort-btn i {
+            font-size: 10px;
+        }
+
+        .sort-btn-desc i {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
-    <div class="app-container">
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <span class="mobile-title">GTD Desktop</span>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Desktop Sidebar Toggle -->
+    <button class="desktop-sidebar-toggle" onclick="toggleDesktopSidebar()" title="Toggle Sidebar">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="app-container sidebar-hidden">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="logo">
                 <div class="logo-icon">
                     <i class="fas fa-check-circle"></i>
@@ -664,6 +930,31 @@
                 </div>
             </div>
 
+            <!-- Sorting Controls -->
+            <div class="sort-controls">
+                <span class="sort-label">Sort by:</span>
+                <button class="sort-btn active" data-sort="none" onclick="sortTasks('none')">
+                    <i class="fas fa-ban"></i>
+                    Default
+                </button>
+                <button class="sort-btn" data-sort="priority" onclick="sortTasks('priority')">
+                    <i class="fas fa-flag"></i>
+                    Priority
+                </button>
+                <button class="sort-btn" data-sort="priority-desc" onclick="sortTasks('priority-desc')">
+                    <i class="fas fa-flag"></i>
+                    Priority (High→Low)
+                </button>
+                <button class="sort-btn" data-sort="due-date" onclick="sortTasks('due-date')">
+                    <i class="fas fa-calendar"></i>
+                    Due Date
+                </button>
+                <button class="sort-btn" data-sort="due-date-desc" onclick="sortTasks('due-date-desc')">
+                    <i class="fas fa-calendar"></i>
+                    Due Date (Near→Far)
+                </button>
+            </div>
+
             <!-- Task Board -->
             <div class="task-board" id="task-board">
                 <!-- Columns will be populated by JavaScript -->
@@ -708,6 +999,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" class="form-input" id="edit-task-due-date">
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Comments</label>
                     <textarea class="form-textarea" id="edit-task-comments" placeholder="Add comments (one per line)"></textarea>
                 </div>
@@ -725,6 +1021,7 @@
     <script>
         let tasks = [];
         let rawGtdData = {};
+        let currentSort = 'none';
         let columns = [
             { id: 'todo', title: 'To Do', icon: 'fa-circle', color: '#64748b' },
             { id: 'doing', title: 'In Progress', icon: 'fa-spinner', color: '#f59e0b' },
@@ -753,6 +1050,7 @@
             // Parse projects
             if (rawGtdData.projects) {
                 rawGtdData.projects.forEach((task, idx) => {
+                    const dueDate = extractDueDate(task.comments);
                     tasks.push({
                         id: `proj-${idx}`,
                         title: task.text,
@@ -760,7 +1058,8 @@
                         priority: 'medium',
                         category: 'projects',
                         comments: task.comments || [],
-                        completed: task.completed
+                        completed: task.completed,
+                        dueDate: dueDate
                     });
                 });
             }
@@ -769,6 +1068,7 @@
             if (rawGtdData.next_actions) {
                 rawGtdData.next_actions.forEach((task, idx) => {
                     const isHighPriority = task.comments.some(c => c.includes('优先级高'));
+                    const dueDate = extractDueDate(task.comments);
                     tasks.push({
                         id: `next-${idx}`,
                         title: task.text,
@@ -776,7 +1076,8 @@
                         priority: isHighPriority ? 'high' : 'medium',
                         category: 'next_actions',
                         comments: task.comments || [],
-                        completed: task.completed
+                        completed: task.completed,
+                        dueDate: dueDate
                     });
                 });
             }
@@ -784,6 +1085,7 @@
             // Parse waiting for
             if (rawGtdData.waiting_for) {
                 rawGtdData.waiting_for.forEach((task, idx) => {
+                    const dueDate = extractDueDate(task.comments);
                     tasks.push({
                         id: `wait-${idx}`,
                         title: task.text,
@@ -791,7 +1093,8 @@
                         priority: 'low',
                         category: 'waiting_for',
                         comments: task.comments || [],
-                        completed: task.completed
+                        completed: task.completed,
+                        dueDate: dueDate
                     });
                 });
             }
@@ -799,6 +1102,7 @@
             // Parse someday/maybe
             if (rawGtdData.someday_maybe) {
                 rawGtdData.someday_maybe.forEach((task, idx) => {
+                    const dueDate = extractDueDate(task.comments);
                     tasks.push({
                         id: `some-${idx}`,
                         title: task.text,
@@ -806,10 +1110,106 @@
                         priority: 'low',
                         category: 'someday_maybe',
                         comments: task.comments || [],
-                        completed: task.completed
+                        completed: task.completed,
+                        dueDate: dueDate
                     });
                 });
             }
+
+            // Apply current sort
+            applySort();
+        }
+
+        function extractDueDate(comments) {
+            if (!comments || comments.length === 0) return null;
+            
+            // Look for due date in comments (format: "due: YYYY-MM-DD" or "截止日期: YYYY-MM-DD")
+            for (const comment of comments) {
+                const dueDateMatch = comment.match(/(?:due|截止日期)[:：]\s*(\d{4}-\d{2}-\d{2})/i);
+                if (dueDateMatch) {
+                    return dueDateMatch[1];
+                }
+            }
+            
+            return null;
+        }
+
+        function applySort() {
+            if (currentSort === 'none') return;
+            
+            const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+            
+            tasks.sort((a, b) => {
+                switch (currentSort) {
+                    case 'priority':
+                        // Low to High
+                        const aPriority = priorityOrder[a.priority] || 0;
+                        const bPriority = priorityOrder[b.priority] || 0;
+                        if (aPriority !== bPriority) {
+                            return aPriority - bPriority;
+                        }
+                        // Secondary sort: due date (earlier first)
+                        return compareDueDates(a.dueDate, b.dueDate);
+                        
+                    case 'priority-desc':
+                        // High to Low
+                        const aPriorityDesc = priorityOrder[a.priority] || 0;
+                        const bPriorityDesc = priorityOrder[b.priority] || 0;
+                        if (aPriorityDesc !== bPriorityDesc) {
+                            return bPriorityDesc - aPriorityDesc;
+                        }
+                        // Secondary sort: due date (earlier first)
+                        return compareDueDates(a.dueDate, b.dueDate);
+                        
+                    case 'due-date':
+                        // Far to Near (no due date last)
+                        return compareDueDatesFarToNear(a.dueDate, b.dueDate);
+                        
+                    case 'due-date-desc':
+                        // Near to Far (no due date last)
+                        return compareDueDatesNearToFar(a.dueDate, b.dueDate);
+                        
+                    default:
+                        return 0;
+                }
+            });
+        }
+
+        function compareDueDates(dateA, dateB) {
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return 1; // Put tasks without due date last
+            if (!dateB) return -1;
+            return new Date(dateA) - new Date(dateB);
+        }
+
+        function compareDueDatesNearToFar(dateA, dateB) {
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return 1; // Put tasks without due date last
+            if (!dateB) return -1;
+            return new Date(dateA) - new Date(dateB); // Earlier dates first
+        }
+
+        function compareDueDatesFarToNear(dateA, dateB) {
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return -1; // Put tasks without due date first
+            if (!dateB) return 1;
+            return new Date(dateB) - new Date(dateA); // Later dates first
+        }
+
+        function sortTasks(sortType) {
+            currentSort = sortType;
+            
+            // Update button states
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.sort === sortType) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Re-sort and re-render
+            parseGtdData();
+            renderBoard();
         }
 
         function renderBoard() {
@@ -865,6 +1265,7 @@
                     <div class="task-meta">
                         <span class="task-tag"><i class="fas fa-folder"></i> ${categoryLabel}</span>
                         <span class="task-tag"><i class="fas fa-flag"></i> ${task.priority || 'Low'}</span>
+                        ${task.dueDate ? `<span class="task-tag"><i class="fas fa-calendar"></i> ${task.dueDate}</span>` : ''}
                     </div>
                     ${task.comments && task.comments.length > 0 ? `
                         <div class="task-comments">
@@ -953,6 +1354,7 @@
             document.getElementById('edit-task-title').value = task.title;
             document.getElementById('edit-task-status').value = task.status;
             document.getElementById('edit-task-priority').value = task.priority;
+            document.getElementById('edit-task-due-date').value = task.dueDate || '';
             document.getElementById('edit-task-comments').value = task.comments.join('\n');
 
             document.getElementById('task-modal').classList.add('active');
@@ -968,6 +1370,7 @@
             const title = document.getElementById('edit-task-title').value.trim();
             const status = document.getElementById('edit-task-status').value;
             const priority = document.getElementById('edit-task-priority').value;
+            const dueDate = document.getElementById('edit-task-due-date').value.trim();
             const commentsText = document.getElementById('edit-task-comments').value.trim();
             
             if (!title) return;
@@ -988,6 +1391,12 @@
                         }
                     } else {
                         categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.includes('优先级高'));
+                    }
+                    
+                    // Update due date comment
+                    categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.match(/^(due|截止日期)[:：]/i));
+                    if (dueDate) {
+                        categoryData[idx].comments.push(`due: ${dueDate}`);
                     }
                     
                     await saveGtdData();
@@ -1071,6 +1480,27 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function toggleDesktopSidebar() {
+            const container = document.querySelector('.app-container');
+            container.classList.toggle('sidebar-hidden');
+        }
+
+        // Close sidebar when clicking on nav items on mobile
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+            });
+        });
     </script>
 </body>
 </html>

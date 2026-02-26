@@ -5,7 +5,7 @@
   <!-- Comment: 需要添加更多高级功能 -->
 
 # Next Actions
-- [ ] 测试 GTD 前端
+- [x] 测试 GTD 前端
 - [ ] 修复已知 bug
   <!-- Comment: 优先级高 -->
 
@@ -16,3 +16,4 @@
 # Someday/Maybe
 - [ ] 添加移动端支持
 - [ ] 集成日历功能
+
