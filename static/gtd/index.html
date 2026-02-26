@@ -525,6 +525,25 @@
             font-weight: 500;
             color: var(--gray-900);
             flex: 1;
+            cursor: text;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .task-title:hover {
+            background: var(--gray-100);
+        }
+
+        .task-title:focus {
+            outline: none;
+            background: var(--white);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .task-title.editing {
+            background: var(--white);
+            box-shadow: 0 0 0 2px var(--primary);
         }
 
         .task-actions {
@@ -592,6 +611,79 @@
             border-radius: var(--radius-sm);
             margin-bottom: 6px;
             color: var(--gray-700);
+            cursor: text;
+            padding-right: 24px;
+            position: relative;
+        }
+
+        .task-comment:hover {
+            background: var(--gray-100);
+        }
+
+        .task-comment:focus {
+            outline: none;
+            background: var(--white);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .task-comment.editing {
+            background: var(--white);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .task-comment-delete {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: none;
+            background: var(--gray-300);
+            color: var(--gray-600);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .task-comment:hover .task-comment-delete {
+            display: flex;
+            opacity: 1;
+        }
+
+        .task-comment-delete:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .add-comment {
+            margin-top: 6px;
+        }
+
+        .add-comment input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px dashed var(--gray-300);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            outline: none;
+            transition: all 0.2s;
+            background: var(--gray-50);
+        }
+
+        .add-comment input:focus {
+            border-color: var(--primary);
+            border-style: solid;
+            background: var(--white);
+        }
+
+        .add-comment input::placeholder {
+            color: var(--gray-400);
         }
 
         .task-comment:last-child {
@@ -1242,11 +1334,19 @@
             const priorityClass = `priority-${task.priority || 'low'}`;
             const completedClass = task.completed ? 'completed' : '';
             const categoryLabel = task.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const displayComments = task.comments && task.comments.length > 0 ? task.comments.slice(0, 2) : [];
             
             return `
-                <div class="task-card ${priorityClass} ${completedClass}" onclick="openEditModal('${task.id}')">
+                <div class="task-card ${priorityClass} ${completedClass}" onclick="event.stopPropagation()">
                     <div class="task-header">
-                        <div class="task-title">${escapeHtml(task.title)}</div>
+                        <div class="task-title" 
+                             contenteditable="true" 
+                             data-task-id="${task.id}"
+                             data-original-title="${escapeHtml(task.title)}"
+                             onfocus="this.dataset.originalTitle = this.textContent"
+                             onblur="updateTaskTitle('${task.id}', this)"
+                             onkeydown="handleTitleKeypress(event, '${task.id}', this)"
+                             onclick="event.stopPropagation()">${escapeHtml(task.title)}</div>
                         <div class="task-actions" onclick="event.stopPropagation()">
                             ${!task.completed ? `
                                 <button class="task-action-btn complete-btn" onclick="toggleComplete('${task.id}')" title="Mark Done">
@@ -1257,8 +1357,8 @@
                                     <i class="fas fa-undo"></i>
                                 </button>
                             `}
-                            <button class="task-action-btn" onclick="openEditModal('${task.id}')" title="Edit">
-                                <i class="fas fa-edit"></i>
+                            <button class="task-action-btn" onclick="openEditModal('${task.id}')" title="More Options">
+                                <i class="fas fa-ellipsis-h"></i>
                             </button>
                         </div>
                     </div>
@@ -1267,12 +1367,28 @@
                         <span class="task-tag"><i class="fas fa-flag"></i> ${task.priority || 'Low'}</span>
                         ${task.dueDate ? `<span class="task-tag"><i class="fas fa-calendar"></i> ${task.dueDate}</span>` : ''}
                     </div>
-                    ${task.comments && task.comments.length > 0 ? `
-                        <div class="task-comments">
-                            ${task.comments.slice(0, 2).map(c => `<div class="task-comment">${escapeHtml(c)}</div>`).join('')}
-                            ${task.comments.length > 2 ? `<div class="task-comment">+${task.comments.length - 2} more</div>` : ''}
+                    <div class="task-comments">
+                        ${displayComments.map((c, idx) => `
+                            <div class="task-comment" 
+                                 contenteditable="true" 
+                                 data-task-id="${task.id}"
+                                 data-comment-idx="${idx}"
+                                 data-original-comment="${escapeHtml(c)}"
+                                 onfocus="this.dataset.originalComment = this.textContent"
+                                 onblur="updateComment('${task.id}', ${idx}, this)"
+                                 onkeydown="handleCommentKeypress(event, '${task.id}', ${idx}, this)"
+                                 onclick="event.stopPropagation()">${escapeHtml(c)}</div>
+                        `).join('')}
+                        <div class="add-comment">
+                            <input type="text" 
+                                   placeholder="Add comment..." 
+                                   data-task-id="${task.id}"
+                                   onblur="addComment('${task.id}', this)"
+                                   onkeydown="handleAddCommentKeypress(event, '${task.id}', this)"
+                                   onclick="event.stopPropagation()">
                         </div>
-                    ` : ''}
+                        ${task.comments.length > 2 ? `<div class="task-comment">+${task.comments.length - 2} more</div>` : ''}
+                    </div>
                 </div>
             `;
         }
@@ -1479,6 +1595,110 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Inline editing functions
+        async function updateTaskTitle(taskId, element) {
+            const newTitle = element.textContent.trim();
+            if (!newTitle) {
+                element.textContent = element.dataset.originalTitle || '';
+                return;
+            }
+
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || task.title === newTitle) return;
+
+            try {
+                const categoryData = rawGtdData[task.category];
+                const idx = parseInt(taskId.split('-')[1]);
+                
+                if (categoryData && categoryData[idx]) {
+                    categoryData[idx].text = newTitle;
+                    await saveGtdData();
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error updating task title:', error);
+            }
+        }
+
+        function handleTitleKeypress(event, taskId, element) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                element.blur();
+            } else if (event.key === 'Escape') {
+                element.textContent = element.dataset.originalTitle || element.textContent;
+                element.blur();
+            }
+        }
+
+        async function updateComment(taskId, commentIdx, element) {
+            const newComment = element.textContent.trim();
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            try {
+                const categoryData = rawGtdData[task.category];
+                const idx = parseInt(taskId.split('-')[1]);
+                
+                if (categoryData && categoryData[idx]) {
+                    if (!newComment) {
+                        // Remove empty comment
+                        categoryData[idx].comments.splice(commentIdx, 1);
+                    } else {
+                        categoryData[idx].comments[commentIdx] = newComment;
+                    }
+                    await saveGtdData();
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error updating comment:', error);
+            }
+        }
+
+        function handleCommentKeypress(event, taskId, commentIdx, element) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                element.blur();
+            } else if (event.key === 'Escape') {
+                element.textContent = element.dataset.originalComment || element.textContent;
+                element.blur();
+            }
+        }
+
+        async function addComment(taskId, element) {
+            const newComment = element.value.trim();
+            if (!newComment) return;
+
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            try {
+                const categoryData = rawGtdData[task.category];
+                const idx = parseInt(taskId.split('-')[1]);
+                
+                if (categoryData && categoryData[idx]) {
+                    if (!categoryData[idx].comments) {
+                        categoryData[idx].comments = [];
+                    }
+                    categoryData[idx].comments.push(newComment);
+                    await saveGtdData();
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error adding comment:', error);
+            }
+        }
+
+        function handleAddCommentKeypress(event, taskId, element) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addComment(taskId, element);
+                element.value = '';
+            } else if (event.key === 'Escape') {
+                element.value = '';
+                element.blur();
+            }
         }
 
         function toggleSidebar() {
