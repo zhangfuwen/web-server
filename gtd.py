@@ -7,14 +7,36 @@ import re
 from urllib.parse import urlparse, parse_qs
 import subprocess
 import sys
-
-# Optional imports for URL title extraction
-# These are imported inside the function with try/except to avoid hard dependency
+from datetime import datetime
+import uuid
 
 # GTD tasks file path
 BASE_DIR = os.getcwd()
-GTD_TASKS_FILE = os.path.join(BASE_DIR, 'gtd', 'tasks.md')
+GTD_TASKS_FILE = os.path.join(BASE_DIR, 'gtd', 'tasks.json')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
+
+
+def load_tasks():
+    """Load tasks from JSON file"""
+    if not os.path.exists(GTD_TASKS_FILE):
+        # Create default structure if file doesn't exist
+        default_tasks = {
+            'projects': [],
+            'next_actions': [],
+            'waiting_for': [],
+            'someday_maybe': []
+        }
+        save_tasks(default_tasks)
+        return default_tasks
+    
+    with open(GTD_TASKS_FILE, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def save_tasks(tasks):
+    """Save tasks to JSON file"""
+    with open(GTD_TASKS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(tasks, f, ensure_ascii=False, indent=2)
 
 
 def parse_markdown_to_json(markdown):
@@ -31,7 +53,7 @@ def parse_markdown_to_json(markdown):
     current_task = None
     
     for line in lines:
-        line = line.rstrip()  # Keep leading spaces for comment detection
+        line = line.rstrip()
         
         if line == '# Projects':
             current_category = 'projects'
@@ -42,11 +64,9 @@ def parse_markdown_to_json(markdown):
         elif line == '# Someday/Maybe':
             current_category = 'someday_maybe'
         elif line.startswith('- ') and current_category:
-            # End previous task if exists
             if current_task:
                 tasks[current_category].append(current_task)
             
-            # Start new task
             task_text = line[2:].strip()
             completed = False
             actual_text = task_text
@@ -57,31 +77,28 @@ def parse_markdown_to_json(markdown):
             elif task_text.startswith('[ ] '):
                 actual_text = task_text[4:].strip()
             
+            now = datetime.now().isoformat()
             current_task = {
+                'id': str(uuid.uuid4())[:8],
                 'text': actual_text,
                 'completed': completed,
+                'createdAt': now,
+                'updatedAt': now,
                 'comments': []
             }
-        elif line.strip().startswith('<!-- Comment:') and current_task:
-            # Extract comment content
-            comment_match = re.match(r'^\s*<!-- Comment:\s*(.*?)\s*-->\s*$', line)
+        elif (line.strip().startswith('<!-- Comment:') or line.strip().startswith('• Comment:')) and current_task:
+            comment_match = re.match(r'^\s*(?:<!-- Comment:|• Comment:)\s*(.*?)\s*(?:-->)?\s*$', line)
             if comment_match:
                 comment_text = comment_match.group(1)
-                current_task['comments'].append(comment_text)
-        elif line.strip().startswith('• Comment:') and current_task:
-            # Extract bullet comment
-            comment_text = line.strip()[10:].strip()  # Remove "• Comment:" prefix
-            current_task['comments'].append(comment_text)
-        elif line.strip().startswith('• Note:') and current_task:
-            # Extract note as comment
-            note_text = line.strip()[8:].strip()  # Remove "• Note:" prefix
-            current_task['comments'].append(note_text)
+                current_task['comments'].append({
+                    'id': str(uuid.uuid4())[:8],
+                    'text': comment_text,
+                    'createdAt': datetime.now().isoformat()
+                })
         elif line.strip() == '' and current_task:
-            # Empty line might end a task block
             tasks[current_category].append(current_task)
             current_task = None
     
-    # Add the last task if it exists
     if current_task and current_category:
         tasks[current_category].append(current_task)
     
@@ -131,21 +148,18 @@ def generate_markdown_with_comments(tasks):
 
 
 def read_tasks():
-    """Read tasks from markdown file"""
+    """Read tasks from JSON file"""
     try:
-        with open(GTD_TASKS_FILE, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return content
+        tasks = load_tasks()
+        return json.dumps(tasks, ensure_ascii=False)
     except Exception as e:
         raise Exception(f"Error reading tasks file: {str(e)}")
 
 
 def write_tasks(tasks):
-    """Write tasks to markdown file"""
+    """Write tasks to JSON file"""
     try:
-        markdown = generate_markdown_with_comments(tasks)
-        with open(GTD_TASKS_FILE, 'w', encoding='utf-8') as f:
-            f.write(markdown)
+        save_tasks(tasks)
         return True
     except Exception as e:
         raise Exception(f"Error writing tasks file: {str(e)}")
@@ -154,8 +168,13 @@ def write_tasks(tasks):
 def clear_tasks():
     """Clear all tasks"""
     try:
-        with open(GTD_TASKS_FILE, 'w', encoding='utf-8') as f:
-            f.write("# Projects\n\n# Next Actions\n\n# Waiting For\n\n# Someday/Maybe\n")
+        default_tasks = {
+            'projects': [],
+            'next_actions': [],
+            'waiting_for': [],
+            'someday_maybe': []
+        }
+        save_tasks(default_tasks)
         return True
     except Exception as e:
         raise Exception(f"Error clearing tasks: {str(e)}")
@@ -279,88 +298,95 @@ class GTDHandler:
             self.send_error(500, f"Error serving GTD static file: {repr(e)}")
     
     def serve_gtd_tasks(self):
-        """Serve the tasks.md file content"""
+        """Serve the tasks.json file content"""
         try:
-            content = read_tasks()
-            
-            # Check if client wants JSON
-            accept_header = self.headers.get('Accept', '')
-            if 'application/json' in accept_header:
-                # Parse markdown to JSON
-                tasks = parse_markdown_to_json(content)
-                json_content = json.dumps(tasks)
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.send_header("Content-Length", str(len(json_content)))
-                self.end_headers()
-                self.wfile.write(json_content.encode('utf-8'))
-            else:
-                # Return markdown
-                self.send_response(200)
-                self.send_header("Content-type", "text/markdown; charset=utf-8")
-                self.send_header("Content-Length", str(len(content.encode('utf-8'))))
-                self.end_headers()
-                self.wfile.write(content.encode('utf-8'))
-            
+            tasks = load_tasks()
+            json_content = json.dumps(tasks, ensure_ascii=False)
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(json_content.encode('utf-8'))))
+            self.end_headers()
+            self.wfile.write(json_content.encode('utf-8'))
         except Exception as e:
             self.send_error(500, f"Error reading tasks file: {str(e)}")
     
     def add_gtd_task(self):
-        """Add a new task (not used in current frontend, but available for API)"""
+        """Add a new task"""
         try:
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length).decode('utf-8')
             task_data = json.loads(post_data)
             
-            # This would be implemented if needed
+            tasks = load_tasks()
+            category = task_data.get('category', 'projects')
+            
+            now = datetime.now().isoformat()
+            new_task = {
+                'id': str(uuid.uuid4())[:8],
+                'text': task_data.get('text', ''),
+                'completed': False,
+                'createdAt': now,
+                'updatedAt': now,
+                'comments': []
+            }
+            
+            if category in tasks:
+                tasks[category].append(new_task)
+                save_tasks(tasks)
+            
             self.send_response(201)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"message": "Task added"}).encode('utf-8'))
-            
+            self.wfile.write(json.dumps({"message": "Task added", "task": new_task}).encode('utf-8'))
         except Exception as e:
             self.send_error(400, f"Error adding task: {str(e)}")
     
     def update_gtd_tasks(self):
-        """Update the entire tasks.md file with comments support"""
+        """Update the entire tasks.json file"""
         try:
             content_length = int(self.headers.get('Content-Length', 0))
             content = self.rfile.read(content_length).decode('utf-8')
             
-            # Check content type
             content_type = self.headers.get('Content-Type', '')
             
             if 'application/json' in content_type:
-                # JSON format - parse and convert to markdown
                 tasks = json.loads(content)
-                markdown = generate_markdown_with_comments(tasks)
             else:
-                # Assume markdown format (text/markdown or text/plain)
-                markdown = content
+                tasks = parse_markdown_to_json(content)
             
-            # Write to file
-            with open(GTD_TASKS_FILE, 'w', encoding='utf-8') as f:
-                f.write(markdown)
+            # Update timestamps and normalize comments
+            now = datetime.now().isoformat()
+            for category in tasks:
+                for task in tasks.get(category, []):
+                    task['updatedAt'] = now
+                    if 'comments' in task:
+                        for i, comment in enumerate(task['comments']):
+                            if isinstance(comment, str):
+                                task['comments'][i] = {
+                                    'id': str(uuid.uuid4())[:8],
+                                    'text': comment,
+                                    'createdAt': now
+                                }
+                            elif isinstance(comment, dict) and 'createdAt' not in comment:
+                                comment['createdAt'] = now
+            
+            save_tasks(tasks)
             
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"message": "Tasks updated successfully"}).encode('utf-8'))
-            
         except Exception as e:
             self.send_error(500, f"Error updating tasks: {str(e)}")
     
     def clear_gtd_tasks(self):
         """Clear all tasks"""
         try:
-            with open(GTD_TASKS_FILE, 'w', encoding='utf-8') as f:
-                f.write("# Projects\n\n# Next Actions\n\n# Waiting For\n\n# Someday/Maybe\n")
-            
+            clear_tasks()
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"message": "Tasks cleared successfully"}).encode('utf-8'))
-            
         except Exception as e:
             self.send_error(500, f"Error clearing tasks: {str(e)}")
     

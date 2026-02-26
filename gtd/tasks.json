@@ -1,0 +1,79 @@
+{
+  "projects": [
+    {
+      "id": "task-1",
+      "text": "完成 web 服务器改进",
+      "completed": false,
+      "createdAt": "2026-02-26T10:00:00",
+      "updatedAt": "2026-02-26T10:00:00",
+      "comments": []
+    },
+    {
+      "id": "task-2",
+      "text": "添加 GTD 功能",
+      "completed": true,
+      "createdAt": "2026-02-24T09:00:00",
+      "updatedAt": "2026-02-24T12:00:00",
+      "comments": [
+        {"id": "c1", "text": "已完成基础功能", "createdAt": "2026-02-24T10:00:00"},
+        {"id": "c2", "text": "需要添加更多高级功能", "createdAt": "2026-02-24T12:00:00"}
+      ]
+    }
+  ],
+  "next_actions": [
+    {
+      "id": "task-3",
+      "text": "测试 GTD 前端",
+      "completed": false,
+      "createdAt": "2026-02-26T10:00:00",
+      "updatedAt": "2026-02-26T10:00:00",
+      "comments": []
+    },
+    {
+      "id": "task-4",
+      "text": "修复已知 bug",
+      "completed": false,
+      "createdAt": "2026-02-26T10:00:00",
+      "updatedAt": "2026-02-26T10:00:00",
+      "comments": [
+        {"id": "c3", "text": "优先级高", "createdAt": "2026-02-26T10:00:00"}
+      ]
+    }
+  ],
+  "waiting_for": [
+    {
+      "id": "task-5",
+      "text": "用户反馈",
+      "completed": false,
+      "createdAt": "2026-02-26T10:00:00",
+      "updatedAt": "2026-02-26T10:00:00",
+      "comments": []
+    },
+    {
+      "id": "task-6",
+      "text": "服务器部署",
+      "completed": false,
+      "createdAt": "2026-02-26T10:00:00",
+      "updatedAt": "2026-02-26T10:00:00",
+      "comments": []
+    }
+  ],
+  "someday_maybe": [
+    {
+      "id": "task-7",
+      "text": "添加移动端支持",
+      "completed": false,
+      "createdAt": "2026-02-26T10:00:00",
+      "updatedAt": "2026-02-26T10:00:00",
+      "comments": []
+    },
+    {
+      "id": "task-8",
+      "text": "集成日历功能",
+      "completed": false,
+      "createdAt": "2026-02-26T10:00:00",
+      "updatedAt": "2026-02-26T10:00:00",
+      "comments": []
+    }
+  ]
+}
