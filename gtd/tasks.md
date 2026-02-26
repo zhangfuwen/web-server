@@ -4,6 +4,9 @@
 - [x] 添加 GTD 功能
   <!-- Comment: 已完成基础功能 -->
   <!-- Comment: 需要添加更多高级功能 -->
+- [ ] 与AI技术部讨论可测试性需求
+- [ ] 与AI技术部讨论功耗热指标的TMG评审
+- [ ] 分析Google NPU Manager代码
 
 # Next Actions
 - [x] 测试 GTD 前端

@@ -686,6 +686,163 @@
             color: var(--gray-400);
         }
 
+        /* Subtasks */
+        .subtasks {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .subtasks-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-500);
+        }
+
+        .subtasks-count {
+            background: var(--gray-200);
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 4px;
+        }
+
+        .subtasks-toggle {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .subtasks-toggle:hover {
+            background: var(--primary-light);
+        }
+
+        .subtask-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: var(--gray-50);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .subtask-item:hover {
+            background: var(--gray-100);
+        }
+
+        .subtask-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--gray-400);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .subtask-checkbox:hover {
+            border-color: var(--primary);
+        }
+
+        .subtask-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+            color: var(--white);
+        }
+
+        .subtask-text {
+            flex: 1;
+            cursor: text;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .subtask-text:hover {
+            background: var(--gray-200);
+        }
+
+        .subtask-text:focus {
+            outline: none;
+            background: var(--white);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .subtask-text.completed {
+            text-decoration: line-through;
+            color: var(--gray-400);
+        }
+
+        .subtask-delete {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: none;
+            background: var(--gray-200);
+            color: var(--gray-500);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .subtask-item:hover .subtask-delete {
+            opacity: 1;
+        }
+
+        .subtask-delete:hover {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .add-subtask {
+            margin-top: 6px;
+        }
+
+        .add-subtask input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px dashed var(--gray-300);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            outline: none;
+            transition: all 0.2s;
+            background: var(--gray-50);
+        }
+
+        .add-subtask input:focus {
+            border-color: var(--primary);
+            border-style: solid;
+            background: var(--white);
+        }
+
+        .add-subtask input::placeholder {
+            color: var(--gray-400);
+        }
+
         .task-comment:last-child {
             margin-bottom: 0;
         }
@@ -1143,6 +1300,7 @@
             if (rawGtdData.projects) {
                 rawGtdData.projects.forEach((task, idx) => {
                     const dueDate = extractDueDate(task.comments);
+                    const subtasks = extractSubtasks(task.comments);
                     tasks.push({
                         id: `proj-${idx}`,
                         title: task.text,
@@ -1151,7 +1309,8 @@
                         category: 'projects',
                         comments: task.comments || [],
                         completed: task.completed,
-                        dueDate: dueDate
+                        dueDate: dueDate,
+                        subtasks: subtasks
                     });
                 });
             }
@@ -1161,6 +1320,7 @@
                 rawGtdData.next_actions.forEach((task, idx) => {
                     const isHighPriority = task.comments.some(c => c.includes('优先级高'));
                     const dueDate = extractDueDate(task.comments);
+                    const subtasks = extractSubtasks(task.comments);
                     tasks.push({
                         id: `next-${idx}`,
                         title: task.text,
@@ -1169,7 +1329,8 @@
                         category: 'next_actions',
                         comments: task.comments || [],
                         completed: task.completed,
-                        dueDate: dueDate
+                        dueDate: dueDate,
+                        subtasks: subtasks
                     });
                 });
             }
@@ -1178,6 +1339,7 @@
             if (rawGtdData.waiting_for) {
                 rawGtdData.waiting_for.forEach((task, idx) => {
                     const dueDate = extractDueDate(task.comments);
+                    const subtasks = extractSubtasks(task.comments);
                     tasks.push({
                         id: `wait-${idx}`,
                         title: task.text,
@@ -1186,7 +1348,8 @@
                         category: 'waiting_for',
                         comments: task.comments || [],
                         completed: task.completed,
-                        dueDate: dueDate
+                        dueDate: dueDate,
+                        subtasks: subtasks
                     });
                 });
             }
@@ -1195,6 +1358,7 @@
             if (rawGtdData.someday_maybe) {
                 rawGtdData.someday_maybe.forEach((task, idx) => {
                     const dueDate = extractDueDate(task.comments);
+                    const subtasks = extractSubtasks(task.comments);
                     tasks.push({
                         id: `some-${idx}`,
                         title: task.text,
@@ -1203,7 +1367,8 @@
                         category: 'someday_maybe',
                         comments: task.comments || [],
                         completed: task.completed,
-                        dueDate: dueDate
+                        dueDate: dueDate,
+                        subtasks: subtasks
                     });
                 });
             }
@@ -1224,6 +1389,23 @@
             }
             
             return null;
+        }
+
+        function extractSubtasks(comments) {
+            if (!comments || comments.length === 0) return [];
+            
+            const subtasks = [];
+            for (const comment of comments) {
+                const subtaskMatch = comment.match(/^subtask:\s*(.+?)(?:\s*\[([x ])\])?$/i);
+                if (subtaskMatch) {
+                    subtasks.push({
+                        text: subtaskMatch[1],
+                        completed: subtaskMatch[2] === 'x'
+                    });
+                }
+            }
+            
+            return subtasks;
         }
 
         function applySort() {
@@ -1366,7 +1548,60 @@
                         <span class="task-tag"><i class="fas fa-folder"></i> ${categoryLabel}</span>
                         <span class="task-tag"><i class="fas fa-flag"></i> ${task.priority || 'Low'}</span>
                         ${task.dueDate ? `<span class="task-tag"><i class="fas fa-calendar"></i> ${task.dueDate}</span>` : ''}
+                        ${task.subtasks && task.subtasks.length > 0 ? `
+                            <span class="task-tag">
+                                <i class="fas fa-check-square"></i>
+                                ${task.subtasks.filter(s => s.completed).length}/${task.subtasks.length}
+                            </span>
+                        ` : ''}
                     </div>
+                    ${task.subtasks && task.subtasks.length > 0 ? `
+                        <div class="subtasks">
+                            <div class="subtasks-header">
+                                <span>Subtasks<span class="subtasks-count">${task.subtasks.filter(s => s.completed).length}/${task.subtasks.length}</span></span>
+                                <button class="subtasks-toggle" onclick="toggleSubtasks('${task.id}', event)">Hide</button>
+                            </div>
+                            <div class="subtask-list" id="subtasks-${task.id}">
+                                ${task.subtasks.map((st, idx) => `
+                                    <div class="subtask-item">
+                                        <div class="subtask-checkbox ${st.completed ? 'checked' : ''}" 
+                                             onclick="toggleSubtask('${task.id}', ${idx}, event)">
+                                            ${st.completed ? '<i class="fas fa-check" style="font-size: 10px;"></i>' : ''}
+                                        </div>
+                                        <div class="subtask-text ${st.completed ? 'completed' : ''}" 
+                                             contenteditable="true" 
+                                             data-task-id="${task.id}"
+                                             data-subtask-idx="${idx}"
+                                             data-original-subtask="${escapeHtml(st.text)}"
+                                             onfocus="this.dataset.originalSubtask = this.textContent"
+                                             onblur="updateSubtask('${task.id}', ${idx}, this)"
+                                             onkeydown="handleSubtaskKeypress(event, '${task.id}', ${idx}, this)"
+                                             onclick="event.stopPropagation()">${escapeHtml(st.text)}</div>
+                                        <button class="subtask-delete" onclick="deleteSubtask('${task.id}', ${idx}, event)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="add-subtask">
+                                <input type="text" 
+                                       placeholder="Add subtask..." 
+                                       data-task-id="${task.id}"
+                                       onblur="addSubtask('${task.id}', this)"
+                                       onkeydown="handleAddSubtaskKeypress(event, '${task.id}', this)"
+                                       onclick="event.stopPropagation()">
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="add-subtask">
+                            <input type="text" 
+                                   placeholder="Add subtask..." 
+                                   data-task-id="${task.id}"
+                                   onblur="addSubtask('${task.id}', this)"
+                                   onkeydown="handleAddSubtaskKeypress(event, '${task.id}', this)"
+                                   onclick="event.stopPropagation()">
+                        </div>
+                    `}
                     <div class="task-comments">
                         ${displayComments.map((c, idx) => `
                             <div class="task-comment" 
@@ -1694,6 +1929,166 @@
             if (event.key === 'Enter') {
                 event.preventDefault();
                 addComment(taskId, element);
+                element.value = '';
+            } else if (event.key === 'Escape') {
+                element.value = '';
+                element.blur();
+            }
+        }
+
+        // Subtask functions
+        function toggleSubtasks(taskId, event) {
+            event.stopPropagation();
+            const subtaskList = document.getElementById(`subtasks-${taskId}`);
+            const toggleBtn = event.target;
+            
+            if (subtaskList.style.display === 'none') {
+                subtaskList.style.display = 'flex';
+                toggleBtn.textContent = 'Hide';
+            } else {
+                subtaskList.style.display = 'none';
+                toggleBtn.textContent = 'Show';
+            }
+        }
+
+        async function toggleSubtask(taskId, subtaskIdx, event) {
+            event.stopPropagation();
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !task.subtasks) return;
+
+            try {
+                const categoryData = rawGtdData[task.category];
+                const idx = parseInt(taskId.split('-')[1]);
+                
+                if (categoryData && categoryData[idx]) {
+                    // Update subtask completion
+                    const subtask = task.subtasks[subtaskIdx];
+                    const subtaskText = subtask.text;
+                    const newCompleted = !subtask.completed;
+                    
+                    // Find and update the subtask comment
+                    categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.match(/^subtask:/i));
+                    task.subtasks[subtaskIdx].completed = newCompleted;
+                    
+                    // Rebuild subtask comments
+                    task.subtasks.forEach(st => {
+                        const completedStr = st.completed ? 'x' : ' ';
+                        categoryData[idx].comments.push(`subtask: ${st.text} [${completedStr}]`);
+                    });
+                    
+                    await saveGtdData();
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error toggling subtask:', error);
+            }
+        }
+
+        async function updateSubtask(taskId, subtaskIdx, element) {
+            const newSubtaskText = element.textContent.trim();
+            if (!newSubtaskText) {
+                element.textContent = element.dataset.originalSubtask || '';
+                return;
+            }
+
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !task.subtasks) return;
+
+            try {
+                const categoryData = rawGtdData[task.category];
+                const idx = parseInt(taskId.split('-')[1]);
+                
+                if (categoryData && categoryData[idx]) {
+                    task.subtasks[subtaskIdx].text = newSubtaskText;
+                    
+                    // Rebuild subtask comments
+                    categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.match(/^subtask:/i));
+                    task.subtasks.forEach(st => {
+                        const completedStr = st.completed ? 'x' : ' ';
+                        categoryData[idx].comments.push(`subtask: ${st.text} [${completedStr}]`);
+                    });
+                    
+                    await saveGtdData();
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error updating subtask:', error);
+            }
+        }
+
+        function handleSubtaskKeypress(event, taskId, subtaskIdx, element) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                element.blur();
+            } else if (event.key === 'Escape') {
+                element.textContent = element.dataset.originalSubtask || element.textContent;
+                element.blur();
+            }
+        }
+
+        async function deleteSubtask(taskId, subtaskIdx, event) {
+            event.stopPropagation();
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !task.subtasks) return;
+
+            try {
+                const categoryData = rawGtdData[task.category];
+                const idx = parseInt(taskId.split('-')[1]);
+                
+                if (categoryData && categoryData[idx]) {
+                    task.subtasks.splice(subtaskIdx, 1);
+                    
+                    // Rebuild subtask comments
+                    categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.match(/^subtask:/i));
+                    task.subtasks.forEach(st => {
+                        const completedStr = st.completed ? 'x' : ' ';
+                        categoryData[idx].comments.push(`subtask: ${st.text} [${completedStr}]`);
+                    });
+                    
+                    await saveGtdData();
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error deleting subtask:', error);
+            }
+        }
+
+        async function addSubtask(taskId, element) {
+            const newSubtaskText = element.value.trim();
+            if (!newSubtaskText) return;
+
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            try {
+                const categoryData = rawGtdData[task.category];
+                const idx = parseInt(taskId.split('-')[1]);
+                
+                if (categoryData && categoryData[idx]) {
+                    if (!task.subtasks) {
+                        task.subtasks = [];
+                    }
+                    task.subtasks.push({ text: newSubtaskText, completed: false });
+                    
+                    // Rebuild subtask comments
+                    categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.match(/^subtask:/i));
+                    task.subtasks.forEach(st => {
+                        const completedStr = st.completed ? 'x' : ' ';
+                        categoryData[idx].comments.push(`subtask: ${st.text} [${completedStr}]`);
+                    });
+                    
+                    await saveGtdData();
+                    await loadTasks();
+                }
+            } catch (error) {
+                console.error('Error adding subtask:', error);
+            }
+        }
+
+        function handleAddSubtaskKeypress(event, taskId, element) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addSubtask(taskId, element);
                 element.value = '';
             } else if (event.key === 'Escape') {
                 element.value = '';
