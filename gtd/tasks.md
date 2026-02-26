@@ -1,6 +1,7 @@
 # Projects
 - [ ] 完成 web 服务器改进
   <!-- Comment: due: 2026-02-27 -->
+  <!-- Comment: subtask: 界面弄紧凑一点 [ ] -->
 - [x] 添加 GTD 功能
   <!-- Comment: 已完成基础功能 -->
   <!-- Comment: 需要添加更多高级功能 -->
