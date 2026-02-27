@@ -1683,7 +1683,8 @@
                     markdown += `- [${task.completed ? 'x' : ' '}] ${task.text}\n`;
                     if (task.comments && task.comments.length > 0) {
                         task.comments.forEach(comment => {
-                            markdown += `  <!-- Comment: ${comment} -->\n`;
+                            const commentText = typeof comment === 'string' ? comment : comment.text;
+                            markdown += `  <!-- Comment: ${commentText} -->\n`;
                         });
                     }
                 });
@@ -1696,7 +1697,8 @@
                     markdown += `- [${task.completed ? 'x' : ' '}] ${task.text}\n`;
                     if (task.comments && task.comments.length > 0) {
                         task.comments.forEach(comment => {
-                            markdown += `  <!-- Comment: ${comment} -->\n`;
+                            const commentText = typeof comment === 'string' ? comment : comment.text;
+                            markdown += `  <!-- Comment: ${commentText} -->\n`;
                         });
                     }
                 });
@@ -1709,7 +1711,8 @@
                     markdown += `- [${task.completed ? 'x' : ' '}] ${task.text}\n`;
                     if (task.comments && task.comments.length > 0) {
                         task.comments.forEach(comment => {
-                            markdown += `  <!-- Comment: ${comment} -->\n`;
+                            const commentText = typeof comment === 'string' ? comment : comment.text;
+                            markdown += `  <!-- Comment: ${commentText} -->\n`;
                         });
                     }
                 });
@@ -1722,7 +1725,8 @@
                     markdown += `- [${task.completed ? 'x' : ' '}] ${task.text}\n`;
                     if (task.comments && task.comments.length > 0) {
                         task.comments.forEach(comment => {
-                            markdown += `  <!-- Comment: ${comment} -->\n`;
+                            const commentText = typeof comment === 'string' ? comment : comment.text;
+                            markdown += `  <!-- Comment: ${commentText} -->\n`;
                         });
                     }
                 });
