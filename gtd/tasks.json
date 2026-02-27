@@ -1,106 +1,73 @@
 {
   "projects": [
     {
-      "id": "1b445703",
+      "id": "8e45c892",
       "text": "完成 web 服务器改进",
       "completed": false,
-      "createdAt": "2026-02-27T11:15:31.992271",
-      "updatedAt": "2026-02-27T11:15:31.992433",
-      "comments": [
-        {
-          "id": "9c332be5",
-          "text": "[object Object]",
-          "createdAt": "2026-02-27T11:15:31.992332"
-        },
-        {
-          "id": "32916a8b",
-          "text": "[object Object]",
-          "createdAt": "2026-02-27T11:15:31.992343"
-        },
-        {
-          "id": "f51aa5a4",
-          "text": "[object Object]",
-          "createdAt": "2026-02-27T11:15:31.992352"
-        }
-      ]
+      "createdAt": "2026-02-27T11:45:27.446971",
+      "updatedAt": "2026-02-27T11:45:27.447466",
+      "comments": []
     },
     {
-      "id": "536fb06d",
+      "id": "135b605e",
       "text": "添加 GTD 功能",
       "completed": true,
-      "createdAt": "2026-02-27T11:15:31.992355",
-      "updatedAt": "2026-02-27T11:15:31.992433",
-      "comments": [
-        {
-          "id": "4c6ea1db",
-          "text": "[object Object]",
-          "createdAt": "2026-02-27T11:15:31.992368"
-        },
-        {
-          "id": "2086007d",
-          "text": "[object Object]",
-          "createdAt": "2026-02-27T11:15:31.992376"
-        }
-      ]
+      "createdAt": "2026-02-27T11:45:27.447368",
+      "updatedAt": "2026-02-27T11:45:27.447466",
+      "comments": []
     }
   ],
   "next_actions": [
     {
-      "id": "4a325028",
+      "id": "fe82d4d0",
       "text": "测试 GTD 前端",
       "completed": false,
-      "createdAt": "2026-02-27T11:15:31.992380",
-      "updatedAt": "2026-02-27T11:15:31.992433",
+      "createdAt": "2026-02-27T11:45:27.447407",
+      "updatedAt": "2026-02-27T11:45:27.447466",
       "comments": []
     },
     {
-      "id": "5b1a7ce3",
+      "id": "1cd86336",
       "text": "修复已知 bug",
       "completed": false,
-      "createdAt": "2026-02-27T11:15:31.992387",
-      "updatedAt": "2026-02-27T11:15:31.992433",
-      "comments": [
-        {
-          "id": "0dde5c2f",
-          "text": "[object Object]",
-          "createdAt": "2026-02-27T11:15:31.992399"
-        }
-      ]
+      "createdAt": "2026-02-27T11:45:27.447418",
+      "updatedAt": "2026-02-27T11:45:27.447466",
+      "comments": []
     }
   ],
   "waiting_for": [
     {
-      "id": "eefad579",
+      "id": "c4d1199d",
       "text": "用户反馈",
       "completed": false,
-      "createdAt": "2026-02-27T11:15:31.992404",
-      "updatedAt": "2026-02-27T11:15:31.992433",
+      "createdAt": "2026-02-27T11:45:27.447437",
+      "updatedAt": "2026-02-27T11:45:27.447466",
       "comments": []
     },
     {
-      "id": "e425a5bf",
+      "id": "fc23f1cd",
       "text": "服务器部署",
       "completed": false,
-      "createdAt": "2026-02-27T11:15:31.992410",
-      "updatedAt": "2026-02-27T11:15:31.992433",
+      "createdAt": "2026-02-27T11:45:27.447444",
+      "updatedAt": "2026-02-27T11:45:27.447466",
       "comments": []
     }
   ],
   "someday_maybe": [
     {
-      "id": "3ce1447c",
+      "id": "26f5f14c",
       "text": "添加移动端支持",
       "completed": false,
-      "createdAt": "2026-02-27T11:15:31.992418",
-      "updatedAt": "2026-02-27T11:15:31.992433",
+      "createdAt": "2026-02-27T11:45:27.447451",
+      "updatedAt": "2026-02-27T11:45:27.447466",
       "comments": []
     },
     {
-      "id": "6348a150",
+      "id": "3671f4f0",
       "text": "集成日历功能",
       "completed": false,
-      "createdAt": "2026-02-27T11:15:31.992424",
-      "updatedAt": "2026-02-27T11:15:31.992433",
+      "createdAt": "2026-02-27T11:45:27.447458",
+      "updatedAt": "2026-02-27T11:45:27.447466",
       "comments": []
     }
   ]
