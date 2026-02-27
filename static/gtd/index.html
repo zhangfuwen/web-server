@@ -1210,7 +1210,7 @@
             // Parse next actions
             if (rawGtdData.next_actions) {
                 rawGtdData.next_actions.forEach((task, idx) => {
-                    const isHighPriority = task.comments.some(c => c.includes('优先级高'));
+                    const isHighPriority = task.comments.some(c => c.text && c.text.includes('优先级高'));
                     const dueDate = extractDueDate(task.comments);
                     tasks.push({
                         id: `next-${idx}`,
@@ -1268,7 +1268,8 @@
             
             // Look for due date in comments (format: "due: YYYY-MM-DD" or "截止日期: YYYY-MM-DD")
             for (const comment of comments) {
-                const dueDateMatch = comment.match(/(?:due|截止日期)[:：]\s*(\d{4}-\d{2}-\d{2})/i);
+                const commentText = typeof comment === 'string' ? comment : (comment.text || '');
+                const dueDateMatch = commentText.match(/(?:due|截止日期)[:：]\s*(\d{4}-\d{2}-\d{2})/i);
                 if (dueDateMatch) {
                     return dueDateMatch[1];
                 }
@@ -1282,7 +1283,8 @@
             
             const subtasks = [];
             for (const comment of comments) {
-                const subtaskMatch = comment.match(/^subtask:\s*(.+?)(?:\s*\[([x ])\])?$/i);
+                const commentText = typeof comment === 'string' ? comment : (comment.text || '');
+                const subtaskMatch = commentText.match(/^subtask:\s*(.+?)(?:\s*\[([x ])\])?$/i);
                 if (subtaskMatch) {
                     subtasks.push({
                         text: subtaskMatch[1],
@@ -1618,7 +1620,7 @@
             document.getElementById('edit-task-status').value = task.status;
             document.getElementById('edit-task-priority').value = task.priority;
             document.getElementById('edit-task-due-date').value = task.dueDate || '';
-            document.getElementById('edit-task-comments').value = task.comments.join('\n');
+            document.getElementById('edit-task-comments').value = task.comments.map(c => c.text || c).join('\n');
 
             document.getElementById('task-modal').classList.add('active');
         }
@@ -1649,17 +1651,17 @@
                     
                     // Update priority comment if high
                     if (priority === 'high') {
-                        if (!categoryData[idx].comments.some(c => c.includes('优先级高'))) {
-                            categoryData[idx].comments.push('优先级高');
+                        if (!categoryData[idx].comments.some(c => c.text && c.text.includes('优先级高'))) {
+                            categoryData[idx].comments.push({id: `c-${Date.now()}`, text: '优先级高', createdAt: new Date().toISOString()});
                         }
                     } else {
-                        categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.includes('优先级高'));
+                        categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.text || !c.text.includes('优先级高'));
                     }
                     
                     // Update due date comment
-                    categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.match(/^(due|截止日期)[:：]/i));
+                    categoryData[idx].comments = categoryData[idx].comments.filter(c => !c.text || !c.text.match(/^(due|截止日期)[:：]/i));
                     if (dueDate) {
-                        categoryData[idx].comments.push(`due: ${dueDate}`);
+                        categoryData[idx].comments.push({id: `c-${Date.now()}`, text: `due: ${dueDate}`, createdAt: new Date().toISOString()});
                     }
                     
                     await saveGtdData();
@@ -1793,7 +1795,12 @@
                         // Remove empty comment
                         categoryData[idx].comments.splice(commentIdx, 1);
                     } else {
-                        categoryData[idx].comments[commentIdx] = newComment;
+                        // Update comment text while preserving object structure
+                        if (typeof categoryData[idx].comments[commentIdx] === 'object') {
+                            categoryData[idx].comments[commentIdx].text = newComment;
+                        } else {
+                            categoryData[idx].comments[commentIdx] = newComment;
+                        }
                     }
                     await saveGtdData();
                     await loadTasks();
@@ -1828,7 +1835,12 @@
                     if (!categoryData[idx].comments) {
                         categoryData[idx].comments = [];
                     }
-                    categoryData[idx].comments.push(newComment);
+                    // Add comment as object to maintain consistent format
+                    categoryData[idx].comments.push({
+                        id: `c-${Date.now()}`,
+                        text: newComment,
+                        createdAt: new Date().toISOString()
+                    });
                     await saveGtdData();
                     await loadTasks();
                 }
@@ -1859,9 +1871,15 @@
                 
                 if (categoryData && categoryData[idx]) {
                     const comment = categoryData[idx].comments[commentIdx];
+                    const commentText = typeof comment === 'string' ? comment : (comment.text || '');
                     // Toggle [ ] to [x] or vice versa
-                    const newComment = comment.replace(/^\[ \]/i, '[x]').replace(/^\[x\]/i, '[ ]');
-                    categoryData[idx].comments[commentIdx] = newComment;
+                    const newCommentText = commentText.replace(/^\[ \]/i, '[x]').replace(/^\[x\]/i, '[ ]');
+                    
+                    if (typeof comment === 'object') {
+                        categoryData[idx].comments[commentIdx].text = newCommentText;
+                    } else {
+                        categoryData[idx].comments[commentIdx] = newCommentText;
+                    }
                     
                     await saveGtdData();
                     await loadTasks();
