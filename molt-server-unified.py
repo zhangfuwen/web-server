@@ -33,6 +33,10 @@ STATIC_DIR = os.path.join(BASE_DIR, 'static')
 # 导入 GTD 模块
 from gtd import GTDHandler, GTD_TASKS_FILE
 
+# Import logging
+from logging_config import setup_logging
+logger = setup_logging()
+
 # 导入认证模块
 try:
     from auth import AuthHandler, SESSION_COOKIE_NAME, get_user_data_path, get_user_gtd_path
@@ -40,9 +44,10 @@ try:
     AUTH_ENABLED = True
     # Patch GTD for multi-user support
     patch_gtd_for_auth()
+    logger.info("Authentication module loaded successfully")
 except ImportError as e:
     AUTH_ENABLED = False
-    print(f"Warning: Auth module not available, running without authentication: {e}")
+    logger.error(f"Auth module not available, running without authentication: {e}")
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in separate threads."""
@@ -968,12 +973,12 @@ def run(port=8081, reloader=False):
     
     server_address = ('', port)
     httpd = ThreadedHTTPServer(server_address, UnifiedHTTPRequestHandler)
-    print(f"Starting unified web server with comments support on port {port}...")
-    print(f"Serving directory: {BASE_DIR}")
-    print(f"GTD app available at: http://bot.xjbcode.fun:{port}/gtd")
-    print(f"System monitor available at: http://bot.xjbcode.fun:{port}/system-info")
-    print(f"KodExplorer should be accessible at: http://bot.xjbcode.fun:{port}/kodexplorer/")
-    print(f"Moltbot WebUI available at: http://bot.xjbcode.fun:18789")
+    logger.info(f"Starting unified web server with comments support on port {port}...")
+    logger.info(f"Serving directory: {BASE_DIR}")
+    logger.info(f"GTD app available at: http://bot.xjbcode.fun:{port}/gtd")
+    logger.info(f"System monitor available at: http://bot.xjbcode.fun:{port}/system-info")
+    logger.info(f"KodExplorer should be accessible at: http://bot.xjbcode.fun:{port}/kodexplorer/")
+    logger.info(f"Moltbot WebUI available at: http://bot.xjbcode.fun:18789")
     httpd.serve_forever()
 
 if __name__ == '__main__':
@@ -991,7 +996,7 @@ if __name__ == '__main__':
             try:
                 port = int(args[i])
             except ValueError:
-                print(f"Invalid port number: {args[i]}, using default port 8081")
+                logger.error(f"Invalid port number: {args[i]}, using default port 8081")
         i += 1
     
     run(port, reloader)
