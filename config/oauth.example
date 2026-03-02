@@ -1,0 +1,66 @@
+# Molt Server OAuth Configuration
+# Copy this file to oauth.env and fill in your credentials
+# NEVER commit oauth.env to version control
+
+# ============================================
+# Google OAuth 2.0 Configuration
+# ============================================
+# Get these from: https://console.cloud.google.com/apis/credentials
+# 1. Create a new project or select existing
+# 2. Enable Google+ API
+# 3. Create OAuth 2.0 Client ID (Web application)
+# 4. Add authorized redirect URIs
+
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_REDIRECT_URI=https://yourdomain.com/auth/google/callback
+
+# ============================================
+# WeChat OAuth 2.0 Configuration
+# ============================================
+# Get these from: https://open.weixin.qq.com/
+# 1. Register as WeChat Open Platform developer
+# 2. Create a website application
+# 3. Get AppID and AppSecret after approval
+
+WECHAT_APP_ID=your_wechat_appid_here
+WECHAT_APP_SECRET=your_wechat_appsecret_here
+WECHAT_REDIRECT_URI=https://yourdomain.com/auth/wechat/callback
+
+# ============================================
+# Session Security Configuration
+# ============================================
+# Generate a secure random key for session encryption
+# Run: python3 -c "import secrets; print(secrets.token_hex(32))"
+
+SESSION_SECRET_KEY=your_64_character_secret_key_here
+
+# Session expiration in hours (default: 24)
+SESSION_EXPIRES_HOURS=24
+
+# ============================================
+# Rate Limiting Configuration
+# ============================================
+# Maximum authentication requests per window
+RATE_LIMIT_REQUESTS=10
+
+# Rate limit window in seconds
+RATE_LIMIT_WINDOW=60
+
+# ============================================
+# Production Notes
+# ============================================
+# 1. Set GOOGLE_REDIRECT_URI and WECHAT_REDIRECT_URI to your actual domain
+# 2. Ensure HTTPS is enabled (required for OAuth callbacks)
+# 3. Keep this file secure and never commit to git
+# 4. Use environment variables in production deployments
+# 5. Rotate SESSION_SECRET_KEY periodically
+
+# ============================================
+# Setup Instructions
+# ============================================
+# 1. Copy this file: cp oauth.example oauth.env
+# 2. Edit oauth.env with your credentials
+# 3. Source the file: source oauth.env
+# 4. Or export variables: export $(cat oauth.env | xargs)
+# 5. Start the server

@@ -1,100 +1,100 @@
 #!/usr/bin/env python3
-#import hupper
-
-# 支持热重载
-#if hupper.is_active():
-#    # 在热重载模式下，重新加载时保持运行
-#    pass
+"""
+Molt Server - Unified HTTP Server with Authentication
+Supports Google OAuth 2.0 and WeChat OAuth 2.0
+"""
 
 import os
 import sys
 import json
 import psutil
 import time
+import hashlib
+import secrets
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import unquote, urlparse, parse_qs
+from urllib.parse import unquote, urlparse, parse_qs, urlencode
 import subprocess
 import threading
 import socket
 from socketserver import ThreadingMixIn
 import requests
-# BeautifulSoup 是可选的，用于 URL 标题提取
+
+# BeautifulSoup is optional, for URL title extraction
 try:
     from bs4 import BeautifulSoup
     BEAUTIFULSOUP_AVAILABLE = True
 except ImportError:
     BEAUTIFULSOUP_AVAILABLE = False
 
-# 设置工作目录 - 支持通过环境变量 WEB_ROOT 配置，默认为 /var/www/html
+# Set working directory - supports WEB_ROOT environment variable, default /var/www/html
 BASE_DIR = os.environ.get('WEB_ROOT', '/var/www/html')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
-# 导入 GTD 模块
+# Import GTD module
 from gtd import GTDHandler, GTD_TASKS_FILE
 
-# 导入认证模块
+# Import authentication module
 try:
-    from auth import AuthHandler, SESSION_COOKIE_NAME, get_user_data_path, get_user_gtd_path
-    from server_auth_integration import serve_current_user, patch_gtd_for_auth
-    AUTH_ENABLED = True
-    # Patch GTD for multi-user support
-    patch_gtd_for_auth()
+    from auth import (
+        init_auth, get_session, create_session, delete_session,
+        get_google_auth_url, get_wechat_auth_url, authenticate_user,
+        SESSION_COOKIE_NAME, CSRF_COOKIE_NAME, CSRF_HEADER_NAME,
+        set_session_cookie, set_csrf_cookie, clear_auth_cookies,
+        generate_csrf_token, check_rate_limit, get_client_ip,
+        login_required, api_login_required
+    )
+    AUTH_AVAILABLE = True
 except ImportError as e:
-    AUTH_ENABLED = False
-    print(f"Warning: Auth module not available, running without authentication: {e}")
+    print(f"⚠️  Warning: Authentication module not available: {e}")
+    AUTH_AVAILABLE = False
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in separate threads."""
-    pass
+    daemon_threads = True
 
-class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else object, BaseHTTPRequestHandler):
+class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
+    protocol_version = 'HTTP/1.1'
+    
+    def __init__(self, *args, **kwargs):
+        self.current_user = None
+        self.current_user_id = None
+        super().__init__(*args, **kwargs)
+    
     def end_headers(self):
         self.send_header('Accept-Ranges', 'bytes')
         super().end_headers()
     
-    def get_current_user(self):
-        """Get current authenticated user if auth is enabled."""
-        if not AUTH_ENABLED:
-            return None
-        return self.get_session_from_request()
+    def get_cookie_value(self, name):
+        """Extract cookie value from Cookie header."""
+        cookie_header = self.headers.get('Cookie', '')
+        cookies = parse_qs(cookie_header, keep_blank_values=True)
+        
+        # parse_qs returns lists, get first value
+        values = cookies.get(name, [])
+        if values:
+            return values[0]
+        return None
     
-    def serve_current_user(self):
-        """Serve current authenticated user info."""
-        if not AUTH_ENABLED:
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'authenticated': False}).encode('utf-8'))
-            return
-        
-        session = self.get_session_from_request()
-        
-        if not session:
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'authenticated': False}).encode('utf-8'))
-            return
-        
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
+    def send_json_response(self, data, status=200):
+        """Send JSON response."""
+        content = json.dumps(data, ensure_ascii=False, indent=2)
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(content.encode('utf-8'))))
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(json.dumps({
-            'authenticated': True,
-            'user': {
-                'id': session['user_id'],
-                'email': session['email'],
-                'name': session['name'],
-                'avatar': session.get('avatar'),
-                'provider': session.get('provider')
-            }
-        }).encode('utf-8'))
-
+        self.wfile.write(content.encode('utf-8'))
+    
+    def redirect_to_login(self):
+        """Redirect to login page."""
+        self.send_response(302)
+        self.send_header('Location', '/auth/login')
+        self.end_headers()
+    
     def send_error(self, code, message=None, explain=None):
         """Override to ensure UTF-8 encoding for error messages."""
         try:
-            # Use default error message if not provided
             if message is None:
                 if code in self.responses:
                     message = self.responses[code][0]
@@ -106,19 +106,15 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 else:
                     explain = ''
             
-            # Ensure message and explain are strings
             msg = f"{code} {message}"
             if explain:
                 msg += f": {explain}"
             
-            # Log the error
             self.log_error("code %d, message %s", code, message)
             
-            # Send response
             self.send_response(code)
             self.send_header('Connection', 'close')
             
-            # HTML error page with UTF-8 encoding
             content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -136,19 +132,45 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             if self.command != 'HEAD' and code >= 200 and code not in (204, 304):
                 self.wfile.write(content.encode('utf-8'))
         except Exception:
-            # If something goes wrong, fall back to parent implementation
             super().send_error(code, message, explain)
-
+    
     def do_GET(self):
-        """处理GET请求"""
+        """Handle GET requests"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
+        query_params = parse_qs(parsed_path.query)
         
-        # Favicon 请求
+        # Favicon request
         if path == '/favicon.ico':
             return self.serve_favicon()
         
-        # 系统信息页面
+        # Authentication routes
+        if AUTH_AVAILABLE:
+            # Login page
+            if path == '/auth/login':
+                return self.serve_login_page()
+            
+            # Google OAuth
+            elif path == '/auth/google/login':
+                return self.handle_google_login()
+            elif path == '/auth/google/callback':
+                return self.handle_google_callback(query_params)
+            
+            # WeChat OAuth
+            elif path == '/auth/wechat/login':
+                return self.handle_wechat_login()
+            elif path == '/auth/wechat/callback':
+                return self.handle_wechat_callback(query_params)
+            
+            # Logout
+            elif path == '/auth/logout':
+                return self.handle_logout()
+            
+            # User profile
+            elif path == '/api/auth/me':
+                return self.handle_get_current_user()
+        
+        # System info page
         if path == '/system-info':
             return self.serve_system_info()
         
@@ -158,67 +180,284 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         elif path == '/BotReports' or path == '/BotReports/':
             return self.serve_bot_reports_index()
         
-        # GTD API endpoints (auth required if enabled)
+        # GTD API endpoints - require authentication
         elif path == '/api/gtd/tasks':
-            if AUTH_ENABLED:
-                session = self.get_session_from_request()
-                if not session:
-                    self.send_response(302)
-                    self.send_header('Location', '/login')
-                    self.end_headers()
-                    return
+            if not AUTH_AVAILABLE or not self.current_user:
+                return self.redirect_to_login()
             return self.serve_gtd_tasks()
         elif path == '/api/gtd/title':
             return self.extract_title_api()
         
-        # GTD app
+        # GTD app - require authentication
         elif path == '/gtd' or path == '/gtd/':
+            if not AUTH_AVAILABLE or not self.current_user:
+                return self.redirect_to_login()
             return self.serve_gtd_app()
         elif path.startswith('/gtd/'):
+            if not AUTH_AVAILABLE or not self.current_user:
+                return self.redirect_to_login()
             return self.serve_gtd_static(path)
         
-        # KodExplorer - served directly by Apache (see molt-server.conf)
-        # 根路径 - 显示增强的文件列表
+        # KodExplorer special handling - proxy to Apache if needed
+        elif path.startswith('/kodexplorer'):
+            if self.is_port_open('localhost', 8080):
+                return self.proxy_to_apache(path)
+            else:
+                return self.serve_file_or_directory(path)
+        
+        # Root path - show enhanced file list
         elif path == '/' or path == '/index.html':
             return self.serve_enhanced_file_list('/')
         
-        # 其他文件/目录
+        # Other files/directories
         else:
             return self.serve_file_or_directory(path)
-
+    
     def do_POST(self):
-        """处理POST请求"""
+        """Handle POST requests"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
         
-        # GTD API endpoints
+        # GTD API endpoints - require authentication
         if path == '/api/gtd/tasks':
+            if not AUTH_AVAILABLE or not self.current_user:
+                self.send_json_response({'error': 'Authentication required'}, 401)
+                return
             return self.add_gtd_task()
         else:
             self.send_error(404, "API endpoint not found")
-
+    
     def do_PUT(self):
-        """处理PUT请求"""
+        """Handle PUT requests"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
         
-        # GTD API endpoints
+        # GTD API endpoints - require authentication
         if path == '/api/gtd/tasks':
+            if not AUTH_AVAILABLE or not self.current_user:
+                self.send_json_response({'error': 'Authentication required'}, 401)
+                return
             return self.update_gtd_tasks()
         else:
             self.send_error(404, "API endpoint not found")
-
+    
     def do_DELETE(self):
-        """处理DELETE请求"""
+        """Handle DELETE requests"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
         
-        # GTD API endpoints
+        # GTD API endpoints - require authentication
         if path == '/api/gtd/tasks':
+            if not AUTH_AVAILABLE or not self.current_user:
+                self.send_json_response({'error': 'Authentication required'}, 401)
+                return
             return self.clear_gtd_tasks()
         else:
             self.send_error(404, "API endpoint not found")
-
+    
+    # ==================== Authentication Handlers ====================
+    
+    def serve_login_page(self):
+        """Serve the login page."""
+        login_html_path = os.path.join(STATIC_DIR, 'auth', 'login.html')
+        
+        if os.path.exists(login_html_path):
+            with open(login_html_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(content.encode('utf-8'))))
+            self.end_headers()
+            self.wfile.write(content.encode('utf-8'))
+        else:
+            self.send_error(500, "Login page not found")
+    
+    def handle_google_login(self):
+        """Initiate Google OAuth flow."""
+        if not AUTH_AVAILABLE:
+            self.send_error(500, "Authentication not available")
+            return
+        
+        # Check rate limit
+        client_ip = get_client_ip(self)
+        if not check_rate_limit(client_ip):
+            self.send_error(429, "Too many requests. Please try again later.")
+            return
+        
+        # Generate state token for CSRF protection
+        state = generate_csrf_token()
+        
+        # Set state in cookie
+        self.send_response(302)
+        self.send_header('Set-Cookie', f'oauth_state={state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600')
+        self.send_header('Location', get_google_auth_url(state))
+        self.end_headers()
+    
+    def handle_google_callback(self, query_params):
+        """Handle Google OAuth callback."""
+        if not AUTH_AVAILABLE:
+            self.send_error(500, "Authentication not available")
+            return
+        
+        # Get code and state from query params
+        code = query_params.get('code', [None])[0]
+        state = query_params.get('state', [None])[0]
+        error = query_params.get('error', [None])[0]
+        
+        if error:
+            return self.redirect_with_error(f'/auth/login?error={error}')
+        
+        if not code:
+            return self.redirect_with_error('/auth/login?error=oauth_failed')
+        
+        # Verify state token
+        cookie_state = self.get_cookie_value('oauth_state')
+        if not cookie_state or cookie_state != state:
+            return self.redirect_with_error('/auth/login?error=invalid_state')
+        
+        # Authenticate user
+        user, error_msg = authenticate_user('google', code)
+        
+        if error_msg or not user:
+            return self.redirect_with_error(f'/auth/login?error=oauth_failed')
+        
+        # Create session
+        client_ip = get_client_ip(self)
+        user_agent = self.headers.get('User-Agent', '')
+        session_token = create_session(user['id'], ip_address=client_ip, user_agent=user_agent)
+        
+        if not session_token:
+            return self.redirect_with_error('/auth/login?error=session_error')
+        
+        # Set session cookie
+        self.send_response(302)
+        set_session_cookie(self, session_token)
+        csrf_token = set_csrf_cookie(self, session_token)
+        self.send_header('Location', '/gtd')
+        self.end_headers()
+    
+    def handle_wechat_login(self):
+        """Initiate WeChat OAuth flow."""
+        if not AUTH_AVAILABLE:
+            self.send_error(500, "Authentication not available")
+            return
+        
+        # Check rate limit
+        client_ip = get_client_ip(self)
+        if not check_rate_limit(client_ip):
+            self.send_error(429, "Too many requests. Please try again later.")
+            return
+        
+        # Generate state token for CSRF protection
+        state = generate_csrf_token()
+        
+        # Set state in cookie
+        self.send_response(302)
+        self.send_header('Set-Cookie', f'oauth_state={state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600')
+        self.send_header('Location', get_wechat_auth_url(state))
+        self.end_headers()
+    
+    def handle_wechat_callback(self, query_params):
+        """Handle WeChat OAuth callback."""
+        if not AUTH_AVAILABLE:
+            self.send_error(500, "Authentication not available")
+            return
+        
+        # Get code and state from query params
+        code = query_params.get('code', [None])[0]
+        state = query_params.get('state', [None])[0]
+        error = query_params.get('error', [None])[0]
+        
+        if error:
+            return self.redirect_with_error(f'/auth/login?error={error}')
+        
+        if not code:
+            return self.redirect_with_error('/auth/login?error=oauth_failed')
+        
+        # Verify state token
+        cookie_state = self.get_cookie_value('oauth_state')
+        if not cookie_state or cookie_state != state:
+            return self.redirect_with_error('/auth/login?error=invalid_state')
+        
+        # Authenticate user
+        user, error_msg = authenticate_user('wechat', code)
+        
+        if error_msg or not user:
+            return self.redirect_with_error(f'/auth/login?error=oauth_failed')
+        
+        # Create session
+        client_ip = get_client_ip(self)
+        user_agent = self.headers.get('User-Agent', '')
+        session_token = create_session(user['id'], ip_address=client_ip, user_agent=user_agent)
+        
+        if not session_token:
+            return self.redirect_with_error('/auth/login?error=session_error')
+        
+        # Set session cookie
+        self.send_response(302)
+        set_session_cookie(self, session_token)
+        csrf_token = set_csrf_cookie(self, session_token)
+        self.send_header('Location', '/gtd')
+        self.end_headers()
+    
+    def handle_logout(self):
+        """Handle logout."""
+        if not AUTH_AVAILABLE:
+            self.send_error(500, "Authentication not available")
+            return
+        
+        # Get session token
+        session_token = self.get_cookie_value(SESSION_COOKIE_NAME)
+        
+        if session_token:
+            # Delete session from database
+            delete_session(session_token)
+        
+        # Clear cookies
+        self.send_response(302)
+        clear_auth_cookies(self)
+        self.send_header('Location', '/auth/login')
+        self.end_headers()
+    
+    def handle_get_current_user(self):
+        """Get current user info (API endpoint)."""
+        if not AUTH_AVAILABLE:
+            self.send_json_response({'error': 'Authentication not available'}, 500)
+            return
+        
+        session_token = self.get_cookie_value(SESSION_COOKIE_NAME)
+        
+        if not session_token:
+            self.send_json_response({'authenticated': False}, 200)
+            return
+        
+        session = get_session(session_token)
+        
+        if not session:
+            self.send_json_response({'authenticated': False}, 200)
+            return
+        
+        # Return user info
+        user_info = {
+            'authenticated': True,
+            'user_id': session['user_id'],
+            'email': session['email'],
+            'name': session['name'],
+            'avatar': session.get('avatar'),
+            'provider': session.get('provider')
+        }
+        
+        self.send_json_response(user_info, 200)
+    
+    def redirect_with_error(self, location):
+        """Redirect with error message."""
+        self.send_response(302)
+        self.send_header('Location', location)
+        self.end_headers()
+    
+    # ==================== Existing Methods (preserved) ====================
+    
     def is_port_open(self, host, port):
         """Check if a port is open"""
         try:
@@ -229,25 +468,22 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             return result == 0
         except:
             return False
-
+    
     def proxy_to_apache(self, path):
         """Proxy request to Apache running on port 8080"""
         try:
             import urllib.request
             import urllib.parse
             
-            # Reconstruct the full URL for Apache
             apache_url = f"http://localhost:8080{path}"
             if self.path.find('?') != -1:
                 apache_url += self.path[self.path.find('?'):]
             
-            # Forward the request headers
             req = urllib.request.Request(apache_url)
             for header in self.headers:
                 if header.lower() not in ['host', 'connection']:
                     req.add_header(header, self.headers[header])
-            
-            # Get the response from Apache
+
             with urllib.request.urlopen(req) as response:
                 content = response.read()
                 self.send_response(response.getcode())
@@ -258,9 +494,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 self.wfile.write(content)
                 
         except Exception as e:
-            # Fallback to direct file serving if proxy fails
             self.send_error(502, f"Proxy error: {str(e)}")
-
+    
     def serve_favicon(self):
         """Serve the favicon"""
         try:
@@ -272,25 +507,22 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 self.send_response(200)
                 self.send_header("Content-type", "image/x-icon")
                 self.send_header("Content-Length", str(len(content)))
-                self.send_header("Cache-Control", "public, max-age=86400")  # 缓存24小时
+                self.send_header("Cache-Control", "public, max-age=86400")
                 self.end_headers()
                 self.wfile.write(content)
             else:
                 self.send_error(404, "Favicon not found")
         except Exception as e:
             self.send_error(500, f"Error serving favicon: {str(e)}")
-
+    
     def serve_file_or_directory(self, path):
         """Serve files or directories directly"""
-        # Clean up the path
         clean_path = path.lstrip('/')
         if clean_path == '':
             clean_path = '.'
         
-        # Resolve the actual file path
         file_path = os.path.join(BASE_DIR, clean_path)
         
-        # Security check - prevent directory traversal
         if not os.path.abspath(file_path).startswith(os.path.abspath(BASE_DIR)):
             self.send_error(403, "Forbidden")
             return
@@ -301,9 +533,9 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             return self.serve_file(file_path)
         else:
             self.send_error(404, "File not found")
-
+    
     def serve_enhanced_file_list(self, path):
-        """显示增强的文件列表页面，包含系统监控链接"""
+        """Show enhanced file list page with system monitor link"""
         try:
             items = []
             dir_path = BASE_DIR + path
@@ -311,12 +543,10 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 fullname = os.path.join(dir_path, name)
                 displayname = linkname = name
 
-                # 如果是目录，添加斜杠
                 if os.path.isdir(fullname):
                     displayname = name + "/"
                     linkname = name + "/"
 
-                # 获取文件大小
                 if os.path.isfile(fullname):
                     size = os.path.getsize(fullname)
                     if size < 1024:
@@ -328,7 +558,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 else:
                     size_str = "-"
 
-                # 获取修改时间
                 mtime = os.path.getmtime(fullname)
                 mtime_str = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -341,14 +570,22 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                     'isdir': os.path.isdir(fullname)
                 })
 
-            # 按目录优先排序
             items.sort(key=lambda x: (not x['isdir'], x['name'].lower()))
 
-            # 生成HTML
+            # Check if user is logged in
+            user_info = ''
+            if AUTH_AVAILABLE and self.current_user:
+                user_info = f'''
+                <div style="margin-bottom: 20px; padding: 10px; background: #e8f5e9; border-radius: 5px;">
+                    👤 Logged in as: <strong>{self.current_user.get('name', 'User')}</strong>
+                    (<a href="/auth/logout" style="color: #c62828;">Logout</a>)
+                </div>
+                '''
+
             html = f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>文件列表 - {unquote(path)}</title>
+    <title>File List - {unquote(path)}</title>
     <style>
         body {{ font-family: Arial, sans-serif; max-width: 1200px; margin: 20px auto; padding: 20px; }}
         h1 {{ color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }}
@@ -400,24 +637,23 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
     </style>
 </head>
 <body>
-    <h1>📁 文件列表</h1>
-    <div class="path">路径: {unquote(path)}</div>
+    <h1>📁 File List</h1>
+    <div class="path">Path: {unquote(path)}</div>
     
-    <!-- System Monitor Link -->
-    <a href="/system-info" class="monitor-link">📊 实时系统监控</a>
-    <!-- Moltbot WebUI Link -->
+    {user_info}
+    
+    <a href="/system-info" class="monitor-link">📊 System Monitor</a>
     <a href="http://bot.xjbcode.fun:18789" class="webui-link" target="_blank">🤖 Moltbot WebUI</a>
-    <!-- GTD Link -->
-    <a href="/gtd" class="gtd-link">✅ GTD 任务管理</a>
+    <a href="/gtd" class="gtd-link">✅ GTD Task Management</a>
 
     {self._generate_parent_link(path)}
 
     <table class="file-table">
         <thead>
             <tr>
-                <th>名称</th>
-                <th>大小</th>
-                <th>修改时间</th>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Modified</th>
             </tr>
         </thead>
         <tbody>
@@ -426,7 +662,7 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
     </table>
 
     <footer style="margin-top: 30px; color: #999; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px;">
-        <p>服务器运行在端口 {self.server.server_address[1]} | 共 {len(items)} 个项目</p>
+        <p>Server running on port {self.server.server_address[1]} | {len(items)} items</p>
     </footer>
 </body>
 </html>"""
@@ -438,26 +674,25 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.wfile.write(html.encode('utf-8'))
 
         except Exception as e:
-            self.send_error(404, f"无法列出目录: {str(e)}")
-
+            self.send_error(404, f"Cannot list directory: {str(e)}")
+    
     def list_directory(self, path):
-        """列出目录内容"""
+        """List directory contents"""
         rel_path = os.path.relpath(path, BASE_DIR)
         if rel_path == '.':
             rel_path = ''
+        
         return self.serve_enhanced_file_list('/' + rel_path)
-
+    
     def serve_file(self, file_path):
         """Serve a single file"""
         try:
-            # Check if it's a Markdown file - render as HTML instead of downloading
             if file_path.endswith('.md') or file_path.endswith('.markdown'):
                 return self.serve_markdown_file(file_path)
             
             with open(file_path, 'rb') as f:
                 content = f.read()
             
-            # Determine content type
             content_type = self.guess_type(file_path)
             
             self.send_response(200)
@@ -467,21 +702,18 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.wfile.write(content)
             
         except Exception as e:
-            self.send_error(404, f"无法读取文件: {str(e)}")
-
+            self.send_error(404, f"Cannot read file: {str(e)}")
+    
     def serve_markdown_file(self, file_path):
         """Render Markdown file as HTML"""
         try:
             import markdown
             
-            # Read the markdown file
             with open(file_path, 'r', encoding='utf-8') as f:
                 md_content = f.read()
             
-            # Convert to HTML
             html_content = markdown.markdown(md_content, extensions=['fenced_code', 'tables'])
             
-            # Get relative path for navigation
             rel_path = os.path.relpath(file_path, BASE_DIR)
             parent_dir = os.path.dirname(rel_path)
             if parent_dir == '.':
@@ -489,7 +721,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             else:
                 parent_dir = '/' + parent_dir
             
-            # Create HTML page with styling
             html_page = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -567,7 +798,7 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
     </style>
 </head>
 <body>
-    <a href="{parent_dir}" class="nav-link">🏠 返回上级目录</a>
+    <a href="{parent_dir}" class="nav-link">🏠 Back to Parent</a>
     <div class="markdown-content">
         {html_content}
     </div>
@@ -581,7 +812,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.wfile.write(html_page.encode('utf-8'))
             
         except ImportError:
-            # Fallback to plain text if markdown module not available
             with open(file_path, 'rb') as f:
                 content = f.read()
             self.send_response(200)
@@ -590,8 +820,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.end_headers()
             self.wfile.write(content)
         except Exception as e:
-            self.send_error(404, f"无法读取Markdown文件: {str(e)}")
-
+            self.send_error(404, f"Cannot read Markdown file: {str(e)}")
+    
     def guess_type(self, path):
         """Simple MIME type guessing"""
         if path.endswith('.html') or path.endswith('.htm'):
@@ -616,18 +846,18 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             return 'text/markdown'
         else:
             return 'application/octet-stream'
-
+    
     def _generate_parent_link(self, current_path):
-        """生成返回上级目录的链接"""
+        """Generate parent directory link"""
         if current_path != '/':
             parent_path = os.path.dirname(current_path.rstrip('/'))
             if parent_path == '':
                 parent_path = '/'
-            return f'<div class="parent-link"><a href="{parent_path}">⬆ 返回上级目录</a></div>'
+            return f'<div class="parent-link"><a href="{parent_path}">⬆ Back to Parent</a></div>'
         return ''
-
+    
     def _generate_file_rows(self, items):
-        """生成文件行的HTML"""
+        """Generate file rows HTML"""
         rows = []
         for item in items:
             icon = "📁" if item['isdir'] else "📄"
@@ -642,12 +872,11 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             </tr>
             """)
         return '\n'.join(rows)
-
+    
     def get_system_info(self):
-        """获取系统信息"""
+        """Get system information"""
         info = {}
         
-        # Memory info
         mem = psutil.virtual_memory()
         info['memory'] = {
             'total': mem.total,
@@ -657,18 +886,15 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             'percent': mem.percent
         }
         
-        # CPU info
         info['cpu'] = {
             'percent': psutil.cpu_percent(interval=1),
             'count': psutil.cpu_count(),
             'per_core': psutil.cpu_percent(interval=1, percpu=True)
         }
         
-        # Process info (all non-system processes)
         processes = []
         for proc in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'cpu_percent', 'memory_percent', 'status']):
             try:
-                # Skip system/kernel processes
                 if proc.info['username'] in ['root', 'system', 'SYSTEM'] and proc.info['pid'] < 1000:
                     continue
                 if proc.info['name'] in ['kthreadd', 'migration', 'rcu_gp', 'idle_inject']:
@@ -678,15 +904,12 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
         
-        # Sort by CPU usage (top 20)
         processes_by_cpu = sorted(processes, key=lambda x: x['cpu_percent'] or 0, reverse=True)[:20]
-        # Sort by memory usage (top 20)
         processes_by_memory = sorted(processes, key=lambda x: x['memory_percent'] or 0, reverse=True)[:20]
         
         info['processes_by_cpu'] = processes_by_cpu
         info['processes_by_memory'] = processes_by_memory
         
-        # Network info
         net_io = psutil.net_io_counters()
         info['network'] = {
             'bytes_sent': net_io.bytes_sent,
@@ -699,15 +922,13 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             'dropout': net_io.dropout
         }
         
-        # Connections
         connections = psutil.net_connections()
         info['connections'] = len(connections)
         
-        # Uptime
         info['uptime'] = time.time() - psutil.boot_time()
         
         return info
-
+    
     def format_bytes(self, bytes_value):
         """Format bytes to human readable"""
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
@@ -715,28 +936,24 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 return f"{bytes_value:.1f} {unit}"
             bytes_value /= 1024.0
         return f"{bytes_value:.1f} PB"
-
+    
     def serve_system_info(self):
         """Serve the system information page"""
         try:
             info = self.get_system_info()
             
-            # Format memory
             mem_total = self.format_bytes(info['memory']['total'])
             mem_used = self.format_bytes(info['memory']['used'])
             mem_available = self.format_bytes(info['memory']['available'])
             
-            # Format network
             net_sent = self.format_bytes(info['network']['bytes_sent'])
             net_recv = self.format_bytes(info['network']['bytes_recv'])
             
-            # Format uptime
             uptime_seconds = int(info['uptime'])
             uptime_hours = uptime_seconds // 3600
             uptime_minutes = (uptime_seconds % 3600) // 60
             uptime_formatted = f"{uptime_hours}h {uptime_minutes}m"
             
-            # Generate CPU-sorted process table
             cpu_process_rows = []
             for proc in info['processes_by_cpu']:
                 if proc['cpu_percent'] is not None and proc['memory_percent'] is not None:
@@ -745,14 +962,13 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                         <td>{proc['pid']}</td>
                         <td>{proc['ppid']}</td>
                         <td>{proc['name']}</td>
-                        <td>{proc['username'] or 'N/A'}</td>
+                        <td>{proc['username']}</td>
                         <td>{proc['cpu_percent']:.1f}%</td>
                         <td>{proc['memory_percent']:.1f}%</td>
-                        <td>{proc['status'] or 'N/A'}</td>
+                        <td>{proc['status']}</td>
                     </tr>
                     """)
             
-            # Generate memory-sorted process table
             memory_process_rows = []
             for proc in info['processes_by_memory']:
                 if proc['cpu_percent'] is not None and proc['memory_percent'] is not None:
@@ -761,32 +977,74 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                         <td>{proc['pid']}</td>
                         <td>{proc['ppid']}</td>
                         <td>{proc['name']}</td>
-                        <td>{proc['username'] or 'N/A'}</td>
+                        <td>{proc['username']}</td>
                         <td>{proc['cpu_percent']:.1f}%</td>
                         <td>{proc['memory_percent']:.1f}%</td>
-                        <td>{proc['status'] or 'N/A'}</td>
+                        <td>{proc['status']}</td>
                     </tr>
                     """)
             
             html = f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>📊 实时系统监控</title>
+    <meta charset="utf-8">
     <meta http-equiv="refresh" content="5">
+    <title>System Monitor</title>
     <style>
-        body {{ font-family: Arial, sans-serif; max-width: 1200px; margin: 20px auto; padding: 20px; }}
-        h1 {{ color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }}
-        h2 {{ color: #333; margin-top: 30px; margin-bottom: 15px; }}
-        .stats-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }}
-        .stat-card {{ background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #4CAF50; }}
-        .stat-card h3 {{ margin: 0 0 10px 0; color: #333; }}
-        .stat-value {{ font-size: 1.2em; font-weight: bold; color: #333; }}
-        .progress-bar {{ height: 10px; background: #e0e0e0; border-radius: 5px; margin: 5px 0; }}
-        .progress-fill {{ height: 100%; background: #4CAF50; border-radius: 5px; }}
-        .process-table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-        .process-table th {{ background: #f5f5f5; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }}
-        .process-table td {{ padding: 8px; border-bottom: 1px solid #eee; }}
-        .process-table tr:hover {{ background: #f9f9f9; }}
+        body {{ 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }}
+        h1, h2 {{ color: #333; }}
+        .stats-grid {{ 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 20px; 
+            margin: 20px 0;
+        }}
+        .stat-card {{ 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .stat-card h3 {{ 
+            margin: 0 0 10px 0; 
+            color: #666; 
+            font-size: 14px;
+            text-transform: uppercase;
+        }}
+        .stat-value {{ 
+            font-size: 24px; 
+            font-weight: bold; 
+            color: #333;
+        }}
+        .process-table {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }}
+        .process-table th {{ 
+            background: #f8f9fa; 
+            padding: 12px; 
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+        }}
+        .process-table td {{ 
+            padding: 12px; 
+            border-bottom: 1px solid #eee;
+        }}
+        .process-table tr:hover {{ 
+            background: #f9f9f9;
+        }}
         .nav-link {{ 
             background: #6c757d; 
             color: white; 
@@ -797,100 +1055,93 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             margin-bottom: 20px;
         }}
         .nav-link:hover {{ background: #5a6268; }}
-        .gtd-link {{
-            background: #FF9800; 
-            color: white; 
-            padding: 10px 15px; 
-            text-decoration: none; 
-            border-radius: 5px; 
-            display: inline-block;
-            margin-bottom: 20px;
-            margin-left: 10px;
+        footer {{ 
+            margin-top: 30px; 
+            color: #999; 
+            font-size: 0.8em; 
+            border-top: 1px solid #eee; 
+            padding-top: 10px;
+            text-align: center;
         }}
-        .gtd-link:hover {{ background: #F57C00; }}
     </style>
 </head>
 <body>
-    <h1>📊 实时系统监控</h1>
-    <a href="/" class="nav-link">🏠 返回文件列表</a>
-    <a href="/gtd" class="gtd-link">✅ GTD 任务管理</a>
+    <a href="/" class="nav-link">🏠 Back to Home</a>
+    <h1>📊 System Monitor</h1>
     
     <div class="stats-grid">
-        <!-- Memory Stats -->
         <div class="stat-card">
-            <h3>💾 内存使用</h3>
-            <div class="stat-value">已用: {mem_used} / {mem_total} ({info['memory']['percent']:.1f}%)</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: {info['memory']['percent']}%"></div>
-            </div>
-            <div>可用: {mem_available}</div>
+            <h3>Memory Total</h3>
+            <div class="stat-value">{mem_total}</div>
         </div>
-        
-        <!-- CPU Stats -->
         <div class="stat-card">
-            <h3>⚙️ CPU 使用</h3>
-            <div class="stat-value">总体: {info['cpu']['percent']:.1f}%</div>
-            <div>核心数: {info['cpu']['count']}</div>
-            <div>每核: {', '.join([f'{x:.1f}%' for x in info['cpu']['per_core'][:4]])}</div>
+            <h3>Memory Used</h3>
+            <div class="stat-value">{mem_used}</div>
         </div>
-        
-        <!-- Network Stats -->
         <div class="stat-card">
-            <h3>🌐 网络统计</h3>
-            <div>已发送: {net_sent}</div>
-            <div>已接收: {net_recv}</div>
-            <div>连接数: {info['connections']}</div>
+            <h3>Memory Available</h3>
+            <div class="stat-value">{mem_available}</div>
         </div>
-        
-        <!-- System Info -->
         <div class="stat-card">
-            <h3>🖥️ 系统信息</h3>
-            <div>运行时间: {uptime_formatted}</div>
-            <div>进程数: {len(info['processes_by_cpu'])}</div>
-            <div>Python版本: {sys.version.split()[0]}</div>
+            <h3>CPU Usage</h3>
+            <div class="stat-value">{info['cpu']['percent']:.1f}%</div>
+        </div>
+        <div class="stat-card">
+            <h3>Network Sent</h3>
+            <div class="stat-value">{net_sent}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Network Received</h3>
+            <div class="stat-value">{net_recv}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Uptime</h3>
+            <div class="stat-value">{uptime_formatted}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Connections</h3>
+            <div class="stat-value">{info['connections']}</div>
         </div>
     </div>
     
-    <!-- Top Processes by CPU -->
-    <h2>📈 高CPU进程 (Top 20)</h2>
+    <h2>📈 Top CPU Processes</h2>
     <table class="process-table">
         <thead>
             <tr>
                 <th>PID</th>
                 <th>PPID</th>
-                <th>进程名</th>
-                <th>用户</th>
+                <th>Name</th>
+                <th>User</th>
                 <th>CPU%</th>
-                <th>内存%</th>
-                <th>状态</th>
+                <th>Memory%</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            {''.join(cpu_process_rows) if cpu_process_rows else '<tr><td colspan="7">暂无进程数据</td></tr>'}
+            {''.join(cpu_process_rows) if cpu_process_rows else '<tr><td colspan="7">No process data</td></tr>'}
         </tbody>
     </table>
     
-    <!-- Top Processes by Memory -->
-    <h2>📈 高内存进程 (Top 20)</h2>
+    <h2>📈 Top Memory Processes</h2>
     <table class="process-table">
         <thead>
             <tr>
                 <th>PID</th>
                 <th>PPID</th>
-                <th>进程名</th>
-                <th>用户</th>
+                <th>Name</th>
+                <th>User</th>
                 <th>CPU%</th>
-                <th>内存%</th>
-                <th>状态</th>
+                <th>Memory%</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            {''.join(memory_process_rows) if memory_process_rows else '<tr><td colspan="7">暂无进程数据</td></tr>'}
+            {''.join(memory_process_rows) if memory_process_rows else '<tr><td colspan="7">No process data</td></tr>'}
         </tbody>
     </table>
     
-    <footer style="margin-top: 30px; color: #999; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px;">
-        <p>数据自动刷新每5秒 | 服务器IP: 47.254.68.82</p>
+    <footer>
+        <p>Auto-refresh every 5 seconds | Server IP: 47.254.68.82</p>
     </footer>
 </body>
 </html>"""
@@ -902,15 +1153,14 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.wfile.write(html.encode('utf-8'))
             
         except Exception as e:
-            self.send_error(500, f"系统监控错误: {str(e)}")
-
+            self.send_error(500, f"System monitor error: {str(e)}")
+    
     def serve_bot_reports_list(self):
         """Serve BotReports list as JSON"""
         try:
             bot_reports_dir = os.path.join(BASE_DIR, 'BotReports')
             reports = []
             
-            # Scan directory for HTML files (excluding index.html)
             for filename in os.listdir(bot_reports_dir):
                 if filename.endswith('.html') and filename != 'index.html':
                     file_path = os.path.join(bot_reports_dir, filename)
@@ -921,10 +1171,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                             'date': str(int(mtime))
                         })
             
-            # Sort by date (newest first)
             reports.sort(key=lambda x: int(x['date']), reverse=True)
             
-            # Send JSON response
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
@@ -934,11 +1182,10 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             
         except Exception as e:
             self.send_error(500, f"Error loading BotReports: {str(e)}")
-
+    
     def serve_bot_reports_index(self):
         """Serve BotReports index.html"""
         try:
-            # Serve from molt_server project directory
             index_path = os.path.join(os.path.dirname(__file__), 'botreports', 'index.html')
             if os.path.exists(index_path):
                 with open(index_path, 'r', encoding='utf-8') as f:
@@ -946,52 +1193,39 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html; charset=utf-8')
-                self.send_header('Cache-Control', 'no-cache')
+                self.send_header('Content-Length', str(len(content.encode('utf-8'))))
                 self.end_headers()
                 self.wfile.write(content.encode('utf-8'))
             else:
-                self.send_error(404, "BotReports index.html not found")
+                self.send_error(404, "BotReports index not found")
         except Exception as e:
             self.send_error(500, f"Error serving BotReports: {str(e)}")
 
 
-def run(port=8081, reloader=False):
-    """运行服务器
-    
-    Args:
-        port: 端口号
-        reloader: 是否启用热重载
-    """
-    if reloader:
-        # 使用 hupper 监视文件变化并自动重启
-        reloader = hupper.start_reloader('main')
+def run_server(port=8000):
+    """Run the HTTP server"""
+    # Initialize authentication
+    if AUTH_AVAILABLE:
+        init_auth()
     
     server_address = ('', port)
     httpd = ThreadedHTTPServer(server_address, UnifiedHTTPRequestHandler)
-    print(f"Starting unified web server with comments support on port {port}...")
-    print(f"Serving directory: {BASE_DIR}")
-    print(f"GTD app available at: http://bot.xjbcode.fun:{port}/gtd")
-    print(f"System monitor available at: http://bot.xjbcode.fun:{port}/system-info")
-    print(f"KodExplorer should be accessible at: http://bot.xjbcode.fun:{port}/kodexplorer/")
-    print(f"Moltbot WebUI available at: http://bot.xjbcode.fun:18789")
-    httpd.serve_forever()
+    
+    print(f"🦎 Molt Server starting on port {port}...")
+    print(f"   📁 Base directory: {BASE_DIR}")
+    print(f"   🔐 Authentication: {'Enabled' if AUTH_AVAILABLE else 'Disabled'}")
+    print(f"   📊 System monitor: http://localhost:{port}/system-info")
+    print(f"   ✅ GTD app: http://localhost:{port}/gtd")
+    if AUTH_AVAILABLE:
+        print(f"   🔑 Login: http://localhost:{port}/auth/login")
+    
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\n🦎 Molt Server shutting down...")
+        httpd.shutdown()
+
 
 if __name__ == '__main__':
-    import sys
-    port = 8081
-    reloader = False
-    
-    # 解析命令行参数
-    args = sys.argv[1:]
-    i = 0
-    while i < len(args):
-        if args[i] == '--reload':
-            reloader = True
-        else:
-            try:
-                port = int(args[i])
-            except ValueError:
-                print(f"Invalid port number: {args[i]}, using default port 8081")
-        i += 1
-    
-    run(port, reloader)
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    run_server(port)

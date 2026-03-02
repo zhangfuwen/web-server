@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""GTD (Getting Things Done) task management module"""
+"""
+GTD (Getting Things Done) task management module with multi-user support.
+Each user has their own isolated task data.
+"""
 
 import os
 import json
@@ -10,15 +13,35 @@ import sys
 from datetime import datetime
 import uuid
 
-# GTD tasks file path
-BASE_DIR = os.getcwd()
-GTD_TASKS_FILE = os.path.join(BASE_DIR, 'gtd', 'tasks.json')
+# GTD tasks file path - now supports per-user directories
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+GTD_BASE_DIR = os.path.join(BASE_DIR, 'gtd')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
+# Default tasks file (for backwards compatibility)
+GTD_TASKS_FILE = os.path.join(GTD_BASE_DIR, 'tasks.json')
 
-def load_tasks():
-    """Load tasks from JSON file"""
-    if not os.path.exists(GTD_TASKS_FILE):
+
+def get_user_tasks_dir(user_id):
+    """Get the tasks directory for a specific user."""
+    user_dir = os.path.join(GTD_BASE_DIR, 'users', str(user_id))
+    os.makedirs(user_dir, exist_ok=True)
+    return user_dir
+
+
+def get_user_tasks_file(user_id):
+    """Get the tasks file path for a specific user."""
+    return os.path.join(get_user_tasks_dir(user_id), 'tasks.json')
+
+
+def load_tasks(user_id=None):
+    """Load tasks from JSON file. If user_id provided, load user-specific tasks."""
+    if user_id:
+        tasks_file = get_user_tasks_file(user_id)
+    else:
+        tasks_file = GTD_TASKS_FILE
+    
+    if not os.path.exists(tasks_file):
         # Create default structure if file doesn't exist
         default_tasks = {
             'projects': [],
@@ -26,16 +49,23 @@ def load_tasks():
             'waiting_for': [],
             'someday_maybe': []
         }
-        save_tasks(default_tasks)
+        save_tasks(default_tasks, user_id)
         return default_tasks
     
-    with open(GTD_TASKS_FILE, 'r', encoding='utf-8') as f:
+    with open(tasks_file, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 
-def save_tasks(tasks):
-    """Save tasks to JSON file"""
-    with open(GTD_TASKS_FILE, 'w', encoding='utf-8') as f:
+def save_tasks(tasks, user_id=None):
+    """Save tasks to JSON file. If user_id provided, save to user-specific file."""
+    if user_id:
+        tasks_file = get_user_tasks_file(user_id)
+        # Ensure user directory exists
+        os.makedirs(os.path.dirname(tasks_file), exist_ok=True)
+    else:
+        tasks_file = GTD_TASKS_FILE
+    
+    with open(tasks_file, 'w', encoding='utf-8') as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
 
 
@@ -147,25 +177,25 @@ def generate_markdown_with_comments(tasks):
     return markdown
 
 
-def read_tasks():
+def read_tasks(user_id=None):
     """Read tasks from JSON file"""
     try:
-        tasks = load_tasks()
+        tasks = load_tasks(user_id)
         return json.dumps(tasks, ensure_ascii=False)
     except Exception as e:
         raise Exception(f"Error reading tasks file: {str(e)}")
 
 
-def write_tasks(tasks):
+def write_tasks(tasks, user_id=None):
     """Write tasks to JSON file"""
     try:
-        save_tasks(tasks)
+        save_tasks(tasks, user_id)
         return True
     except Exception as e:
         raise Exception(f"Error writing tasks file: {str(e)}")
 
 
-def clear_tasks():
+def clear_tasks(user_id=None):
     """Clear all tasks"""
     try:
         default_tasks = {
@@ -174,7 +204,7 @@ def clear_tasks():
             'waiting_for': [],
             'someday_maybe': []
         }
-        save_tasks(default_tasks)
+        save_tasks(default_tasks, user_id)
         return True
     except Exception as e:
         raise Exception(f"Error clearing tasks: {str(e)}")
@@ -188,7 +218,6 @@ def extract_title_from_url(url):
             import requests
             from bs4 import BeautifulSoup
             
-            # Set a reasonable timeout
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
@@ -196,34 +225,29 @@ def extract_title_from_url(url):
             response = requests.get(url, headers=headers, timeout=5)
             response.raise_for_status()
             
-            # Parse HTML and extract title
             soup = BeautifulSoup(response.content, 'html.parser')
             title_tag = soup.find('title')
             
             if title_tag and title_tag.string:
                 title = title_tag.string.strip()
-                if title:  # Non-empty title
+                if title:
                     return title
         except Exception as e:
-            # If fetching fails, continue to other strategies
             pass
         
         # Strategy 2: Extract meaningful name from URL path
         parsed_url = urlparse(url)
         
-        # Try to get the last part of the path
         if parsed_url.path and parsed_url.path != '/':
             path_parts = [p for p in parsed_url.path.split('/') if p]
             if path_parts:
                 last_part = path_parts[-1]
-                # Clean up the filename (remove extensions, decode URL encoding)
                 last_part = re.sub(r'\.[a-zA-Z0-9]+$', '', last_part)
                 last_part = re.sub(r'[-_]+', ' ', last_part)
                 last_part = last_part.replace('%20', ' ')
                 
-                # Capitalize first letter of each word
                 words = last_part.split()
-                if len(words) <= 5:  # Only use if not too long
+                if len(words) <= 5:
                     title = ' '.join(word.capitalize() for word in words)
                     if title:
                         return title
@@ -231,15 +255,12 @@ def extract_title_from_url(url):
         # Strategy 3: Use domain name with path
         if parsed_url.netloc:
             domain = parsed_url.netloc
-            # Remove www. prefix
             if domain.startswith('www.'):
                 domain = domain[4:]
             
-            # Get first part of domain (before first dot)
             domain_part = domain.split('.')[0]
             
             if parsed_url.path and parsed_url.path != '/':
-                # Combine domain with simplified path
                 simple_path = parsed_url.path.replace('/', ' › ')
                 title = f"{domain_part.capitalize()}{simple_path}"
             else:
@@ -251,12 +272,11 @@ def extract_title_from_url(url):
         return url
         
     except Exception as e:
-        # If all strategies fail, return the URL
         return url
 
 
 class GTDHandler:
-    """GTD request handler mixin"""
+    """GTD request handler mixin with multi-user support"""
     
     def serve_gtd_app(self):
         """Serve the GTD application"""
@@ -271,7 +291,6 @@ class GTDHandler:
                 self.end_headers()
                 self.wfile.write(content.encode('utf-8'))
             else:
-                # Fallback to directory listing
                 return self.list_directory(os.path.join(BASE_DIR, 'gtd'))
         except Exception as e:
             self.send_error(500, f"Error serving GTD app: {repr(e)}")
@@ -279,12 +298,10 @@ class GTDHandler:
     def serve_gtd_static(self, path):
         """Serve static files from GTD directory"""
         try:
-            # Clean up the path
             clean_path = path.lstrip('/')
             if clean_path == 'gtd/' or clean_path == 'gtd/index.html':
                 return self.serve_gtd_app()
             
-            # Map /gtd/xxx to static/gtd/xxx
             if clean_path.startswith('gtd/'):
                 static_file_path = os.path.join(STATIC_DIR, clean_path)
             else:
@@ -298,118 +315,129 @@ class GTDHandler:
             self.send_error(500, f"Error serving GTD static file: {repr(e)}")
     
     def serve_gtd_tasks(self):
-        """Serve the tasks.json file content"""
+        """Serve GTD tasks as JSON (with user isolation)"""
         try:
-            tasks = load_tasks()
-            json_content = json.dumps(tasks, ensure_ascii=False)
+            user_id = getattr(self, 'current_user_id', None)
+            tasks_json = read_tasks(user_id)
+            
             self.send_response(200)
-            self.send_header("Content-type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(json_content.encode('utf-8'))))
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(tasks_json.encode('utf-8'))))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'no-cache')
             self.end_headers()
-            self.wfile.write(json_content.encode('utf-8'))
+            self.wfile.write(tasks_json.encode('utf-8'))
+            
         except Exception as e:
-            self.send_error(500, f"Error reading tasks file: {str(e)}")
+            self.send_error(500, f"Error reading tasks: {str(e)}")
     
     def add_gtd_task(self):
-        """Add a new task"""
+        """Add a new GTD task (with user isolation)"""
         try:
             content_length = int(self.headers.get('Content-Length', 0))
-            post_data = self.rfile.read(content_length).decode('utf-8')
-            task_data = json.loads(post_data)
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
             
-            tasks = load_tasks()
-            category = task_data.get('category', 'projects')
+            user_id = getattr(self, 'current_user_id', None)
+            tasks = load_tasks(user_id)
+            
+            category = data.get('category', 'next_actions')
+            if category not in tasks:
+                category = 'next_actions'
             
             now = datetime.now().isoformat()
             new_task = {
                 'id': str(uuid.uuid4())[:8],
-                'text': task_data.get('text', ''),
+                'text': data.get('text', ''),
                 'completed': False,
                 'createdAt': now,
                 'updatedAt': now,
                 'comments': []
             }
             
-            if category in tasks:
-                tasks[category].append(new_task)
-                save_tasks(tasks)
+            tasks[category].append(new_task)
+            save_tasks(tasks, user_id)
             
             self.send_response(201)
-            self.send_header("Content-type", "application/json")
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"message": "Task added", "task": new_task}).encode('utf-8'))
+            self.wfile.write(json.dumps(new_task).encode('utf-8'))
+            
         except Exception as e:
-            self.send_error(400, f"Error adding task: {str(e)}")
+            self.send_error(500, f"Error adding task: {str(e)}")
     
     def update_gtd_tasks(self):
-        """Update the entire tasks.json file"""
+        """Update GTD tasks (with user isolation)"""
         try:
             content_length = int(self.headers.get('Content-Length', 0))
-            content = self.rfile.read(content_length).decode('utf-8')
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
             
-            content_type = self.headers.get('Content-Type', '')
+            user_id = getattr(self, 'current_user_id', None)
+            tasks = load_tasks(user_id)
             
-            if 'application/json' in content_type:
-                tasks = json.loads(content)
-            else:
-                tasks = parse_markdown_to_json(content)
+            # Update tasks based on the data
+            for category in ['projects', 'next_actions', 'waiting_for', 'someday_maybe']:
+                if category in data:
+                    tasks[category] = data[category]
             
-            # Update timestamps and normalize comments
-            now = datetime.now().isoformat()
-            for category in tasks:
-                for task in tasks.get(category, []):
-                    task['updatedAt'] = now
-                    if 'comments' in task:
-                        for i, comment in enumerate(task['comments']):
-                            if isinstance(comment, str):
-                                task['comments'][i] = {
-                                    'id': str(uuid.uuid4())[:8],
-                                    'text': comment,
-                                    'createdAt': now
-                                }
-                            elif isinstance(comment, dict) and 'createdAt' not in comment:
-                                comment['createdAt'] = now
-            
-            save_tasks(tasks)
+            save_tasks(tasks, user_id)
             
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"message": "Tasks updated successfully"}).encode('utf-8'))
+            self.wfile.write(json.dumps({'success': True}).encode('utf-8'))
+            
         except Exception as e:
             self.send_error(500, f"Error updating tasks: {str(e)}")
     
     def clear_gtd_tasks(self):
-        """Clear all tasks"""
+        """Clear all GTD tasks (with user isolation)"""
         try:
-            clear_tasks()
+            user_id = getattr(self, 'current_user_id', None)
+            clear_tasks(user_id)
+            
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"message": "Tasks cleared successfully"}).encode('utf-8'))
+            self.wfile.write(json.dumps({'success': True}).encode('utf-8'))
+            
         except Exception as e:
             self.send_error(500, f"Error clearing tasks: {str(e)}")
     
     def extract_title_api(self):
-        """Extract title from URL for GTD tasks"""
+        """API endpoint to extract title from URL"""
         try:
-            query = urlparse(self.path).query
-            params = parse_qs(query)
-            url = params.get('url', [None])[0]
+            parsed_path = urlparse(self.path)
+            query_params = parse_qs(parsed_path.query)
+            url = query_params.get('url', [None])[0]
             
             if not url:
-                self.send_error(400, "Missing URL parameter")
+                self.send_error(400, "URL parameter required")
                 return
             
             title = extract_title_from_url(url)
-            response_data = {"title": title}
             
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            response_json = json.dumps(response_data)
-            self.send_header("Content-Length", str(len(response_json)))
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(response_json.encode('utf-8'))
+            self.wfile.write(json.dumps({'title': title, 'url': url}).encode('utf-8'))
             
         except Exception as e:
             self.send_error(500, f"Error extracting title: {str(e)}")
+
+
+# Backwards compatibility
+if __name__ == '__main__':
+    # Test the module
+    print("GTD Module loaded successfully")
+    print(f"Base directory: {BASE_DIR}")
+    print(f"Default tasks file: {GTD_TASKS_FILE}")
+    
+    # Test loading tasks
+    tasks = load_tasks()
+    print(f"Loaded {sum(len(tasks[k]) for k in tasks)} tasks")
