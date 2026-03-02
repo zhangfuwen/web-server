@@ -1,0 +1,819 @@
+openapi: 3.0.3
+info:
+  title: Molt Server API
+  description: |
+    Molt Server is a feature-rich HTTP server with file browsing, GTD (Getting Things Done) task management, 
+    system monitoring, and bot report generation capabilities.
+    
+    ## Authentication
+    
+    When authentication is enabled, the following endpoints require a valid session cookie:
+    - All GTD API endpoints (`/api/gtd/*`)
+    - System Info endpoints (`/system-info`, `/system-info/cache-stats`)
+    - User info endpoint (`/api/user`)
+    
+    Authentication is handled via Google OAuth 2.0 or WeChat OAuth 2.0.
+    
+    ## GTD Task Categories
+    
+    Tasks are organized into four GTD categories:
+    - **projects**: Multi-step goals requiring more than one action
+    - **next_actions**: Immediate next physical actions
+    - **waiting_for**: Tasks delegated or pending external input
+    - **someday_maybe**: Future possibilities or reference items
+  version: 1.0.0
+  contact:
+    name: Molt Server
+    url: https://github.com/zhangfuwen/molt-server
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8081
+    description: Local development server
+  - url: http://bot.xjbcode.fun:8081
+    description: Production server
+
+tags:
+  - name: GTD
+    description: Getting Things Done task management API
+  - name: System
+    description: System metrics and monitoring
+  - name: BotReports
+    description: Bot-generated report management
+  - name: Authentication
+    description: User authentication and session management
+
+paths:
+  /api/gtd/tasks:
+    get:
+      tags:
+        - GTD
+      summary: Get all tasks
+      description: Retrieve all GTD tasks organized by category (projects, next_actions, waiting_for, someday_maybe).
+      operationId: getTasks
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Successful response with all tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskList'
+              example:
+                projects:
+                  - id: "a1b2c3d4"
+                    text: "Complete project documentation"
+                    completed: false
+                    createdAt: "2026-03-02T10:00:00"
+                    updatedAt: "2026-03-02T10:00:00"
+                    comments: []
+                next_actions:
+                  - id: "e5f6g7h8"
+                    text: "Review pull request #42"
+                    completed: false
+                    createdAt: "2026-03-02T09:30:00"
+                    updatedAt: "2026-03-02T09:30:00"
+                    comments: []
+                waiting_for: []
+                someday_maybe: []
+        '401':
+          description: Authentication required (when auth is enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      tags:
+        - GTD
+      summary: Create a new task
+      description: Add a new task to a specified category.
+      operationId: createTask
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskInput'
+            example:
+              category: "next_actions"
+              text: "Call John about meeting"
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+              example:
+                id: "i9j0k1l2"
+                text: "Call John about meeting"
+                completed: false
+                createdAt: "2026-03-02T10:30:00"
+                updatedAt: "2026-03-02T10:30:00"
+                comments: []
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error: "Validation failed"
+                message: "Text field is required"
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      tags:
+        - GTD
+      summary: Update tasks (bulk)
+      description: Replace all tasks with the provided task list. This is a bulk update operation.
+      operationId: updateTasks
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskList'
+            example:
+              projects:
+                - id: "a1b2c3d4"
+                  text: "Complete project documentation"
+                  completed: true
+                  createdAt: "2026-03-02T10:00:00"
+                  updatedAt: "2026-03-02T11:00:00"
+                  comments: []
+              next_actions:
+                - id: "e5f6g7h8"
+                  text: "Review pull request #42"
+                  completed: false
+                  createdAt: "2026-03-02T09:30:00"
+                  updatedAt: "2026-03-02T09:30:00"
+                  comments: []
+              waiting_for: []
+              someday_maybe: []
+      responses:
+        '200':
+          description: Tasks updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+              example:
+                success: true
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      tags:
+        - GTD
+      summary: Clear all tasks
+      description: Delete all tasks from all categories. This action cannot be undone.
+      operationId: clearTasks
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: All tasks cleared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+              example:
+                success: true
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/gtd/title:
+    get:
+      tags:
+        - GTD
+      summary: Extract page title from URL
+      description: |
+        Extract the title from a given URL using multiple strategies:
+        1. Fetch webpage and extract <title> tag
+        2. Extract meaningful name from URL path
+        3. Use domain name with path
+        4. Return URL as fallback
+        
+        This is useful for quickly adding tasks with descriptive titles from URLs.
+      operationId: extractTitle
+      parameters:
+        - name: url
+          in: query
+          required: true
+          description: The URL to extract title from
+          schema:
+            type: string
+            format: uri
+            example: "https://github.com/zhangfuwen/molt-server"
+      responses:
+        '200':
+          description: Title extracted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleResponse'
+              example:
+                title: "zhangfuwen/molt-server: A feature-rich HTTP server with GTD task management"
+                url: "https://github.com/zhangfuwen/molt-server"
+        '400':
+          description: Missing or invalid URL parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                error: "Validation failed"
+                message: "URL parameter required"
+        '500':
+          description: Error extracting title
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /system-info:
+    get:
+      tags:
+        - System
+      summary: Get system metrics
+      description: |
+        Retrieve real-time system metrics including:
+        - CPU usage (overall and per-core)
+        - Memory usage (total, used, available, percentage)
+        - Network statistics (bytes sent/received, connections)
+        - Process list (top 20 by CPU and memory)
+        - System uptime
+        
+        Data is cached for 5 seconds to reduce overhead.
+      operationId: getSystemInfo
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: System metrics retrieved successfully
+          content:
+            text/html:
+              schema:
+                type: string
+                description: HTML page with system metrics dashboard
+        '401':
+          description: Authentication required
+        '500':
+          description: Internal server error
+  
+  /system-info/cache-stats:
+    get:
+      tags:
+        - System
+      summary: Get cache statistics
+      description: Retrieve statistics about the internal TTL caches used for system metrics.
+      operationId: getCacheStats
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Cache statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CacheStats'
+              example:
+                system_metrics:
+                  ttl_seconds: 5
+                  cached_entries: 1
+                  hits: 42
+                  misses: 3
+                process_list:
+                  ttl_seconds: 10
+                  cached_entries: 1
+                  hits: 20
+                  misses: 1
+        '401':
+          description: Authentication required
+        '500':
+          description: Internal server error
+  
+  /api/bot-reports:
+    get:
+      tags:
+        - BotReports
+      summary: List all bot reports
+      description: Retrieve a list of all available bot-generated reports with metadata.
+      operationId: listBotReports
+      responses:
+        '200':
+          description: List of bot reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BotReportMeta'
+              example:
+                - filename: "daily-news-2026-03-02.html"
+                  date: "1741017600"
+                - filename: "kernel-patches-2026-03-01.html"
+                  date: "1740931200"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/bot-reports/{name}:
+    get:
+      tags:
+        - BotReports
+      summary: Get specific bot report
+      description: Retrieve a specific bot-generated report by filename.
+      operationId: getBotReport
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Report filename (e.g., "daily-news-2026-03-02.html")
+          schema:
+            type: string
+            example: "daily-news-2026-03-02.html"
+      responses:
+        '200':
+          description: Report content (HTML)
+          content:
+            text/html:
+              schema:
+                type: string
+                description: HTML content of the report
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+  
+  /BotReports:
+    get:
+      tags:
+        - BotReports
+      summary: BotReports index page
+      description: Serve the BotReports index.html page with report listing interface.
+      operationId: getBotReportsIndex
+      responses:
+        '200':
+          description: BotReports index page
+          content:
+            text/html:
+              schema:
+                type: string
+                description: HTML index page for BotReports
+        '404':
+          description: Index page not found
+        '500':
+          description: Internal server error
+  
+  /login:
+    get:
+      tags:
+        - Authentication
+      summary: Login page
+      description: |
+        Display the login page with OAuth provider options (Google, WeChat).
+        When authentication is disabled, this endpoint may not be available.
+      operationId: getLoginPage
+      responses:
+        '200':
+          description: Login page HTML
+          content:
+            text/html:
+              schema:
+                type: string
+                description: Login page with OAuth buttons
+        '503':
+          description: Authentication not enabled
+  
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: OAuth callback
+      description: |
+        Handle OAuth callback from Google or WeChat.
+        This endpoint processes the authorization code and creates a user session.
+        
+        **Google OAuth:**
+        - Exchanges authorization code for access token
+        - Retrieves user info from Google
+        - Creates or updates user account
+        - Sets session cookie
+        
+        **WeChat OAuth:**
+        - Exchanges authorization code for access token and openid
+        - Retrieves user info from WeChat
+        - Creates or updates user account
+        - Sets session cookie
+      operationId: oauthCallback
+      parameters:
+        - name: code
+          in: query
+          required: false
+          description: OAuth authorization code
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          description: OAuth state parameter for CSRF protection
+          schema:
+            type: string
+        - name: provider
+          in: query
+          required: false
+          description: OAuth provider (google or wechat)
+          schema:
+            type: string
+            enum: [google, wechat]
+      responses:
+        '302':
+          description: Redirect to home page on success (with session cookie)
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/"
+            Set-Cookie:
+              schema:
+                type: string
+                description: Session cookie (molt_session)
+        '400':
+          description: OAuth error (invalid code, state, etc.)
+          content:
+            text/html:
+              schema:
+                type: string
+                description: Error page
+        '500':
+          description: Internal server error
+  
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      description: |
+        Logout the current user by deleting their session.
+        Clears session and CSRF cookies.
+      operationId: logout
+      responses:
+        '302':
+          description: Redirect to home page
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/"
+            Set-Cookie:
+              schema:
+                type: string
+                description: Expired session cookie
+  
+  /api/user:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user info
+      description: |
+        Retrieve information about the currently authenticated user.
+        Returns user details if authenticated, or indicates unauthenticated state.
+      operationId: getCurrentUser
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AuthenticatedUser'
+                  - $ref: '#/components/schemas/UnauthenticatedUser'
+              examples:
+                authenticated:
+                  summary: User is authenticated
+                  value:
+                    authenticated: true
+                    user:
+                      id: 1
+                      email: "user@example.com"
+                      name: "John Doe"
+                      avatar: "https://lh3.googleusercontent.com/a/default-user"
+                      provider: "google"
+                unauthenticated:
+                  summary: User is not authenticated
+                  value:
+                    authenticated: false
+        '500':
+          description: Internal server error
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: molt_session
+      description: Session cookie set after successful OAuth authentication
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - text
+        - completed
+        - createdAt
+        - updatedAt
+        - comments
+      properties:
+        id:
+          type: string
+          description: Unique task identifier (8 characters)
+          example: "a1b2c3d4"
+        text:
+          type: string
+          description: Task description
+          example: "Complete project documentation"
+        completed:
+          type: boolean
+          description: Whether the task is marked as complete
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when task was created
+          example: "2026-03-02T10:00:00"
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when task was last updated
+          example: "2026-03-02T10:00:00"
+        comments:
+          type: array
+          description: List of comments on this task
+          items:
+            $ref: '#/components/schemas/Comment'
+    
+    Comment:
+      type: object
+      required:
+        - id
+        - text
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique comment identifier
+          example: "c1d2e3f4"
+        text:
+          type: string
+          description: Comment content
+          example: "Need to review with team first"
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when comment was added
+          example: "2026-03-02T10:15:00"
+    
+    TaskInput:
+      type: object
+      required:
+        - text
+      properties:
+        category:
+          type: string
+          description: Task category
+          enum: [projects, next_actions, waiting_for, someday_maybe]
+          default: "next_actions"
+          example: "next_actions"
+        text:
+          type: string
+          description: Task description
+          example: "Call John about meeting"
+    
+    TaskList:
+      type: object
+      required:
+        - projects
+        - next_actions
+        - waiting_for
+        - someday_maybe
+      properties:
+        projects:
+          type: array
+          description: Multi-step goals
+          items:
+            $ref: '#/components/schemas/Task'
+        next_actions:
+          type: array
+          description: Immediate next actions
+          items:
+            $ref: '#/components/schemas/Task'
+        waiting_for:
+          type: array
+          description: Delegated or pending tasks
+          items:
+            $ref: '#/components/schemas/Task'
+        someday_maybe:
+          type: array
+          description: Future possibilities
+          items:
+            $ref: '#/components/schemas/Task'
+    
+    TitleResponse:
+      type: object
+      required:
+        - title
+        - url
+      properties:
+        title:
+          type: string
+          description: Extracted page title
+          example: "Molt Server - GitHub"
+        url:
+          type: string
+          format: uri
+          description: The original URL
+          example: "https://github.com/zhangfuwen/molt-server"
+    
+    BotReportMeta:
+      type: object
+      required:
+        - filename
+        - date
+      properties:
+        filename:
+          type: string
+          description: Report filename
+          example: "daily-news-2026-03-02.html"
+        date:
+          type: string
+          description: Unix timestamp of report creation
+          example: "1741017600"
+    
+    CacheStats:
+      type: object
+      properties:
+        system_metrics:
+          $ref: '#/components/schemas/CacheEntry'
+        process_list:
+          $ref: '#/components/schemas/CacheEntry'
+    
+    CacheEntry:
+      type: object
+      properties:
+        ttl_seconds:
+          type: integer
+          description: Time-to-live in seconds
+          example: 5
+        cached_entries:
+          type: integer
+          description: Number of cached entries
+          example: 1
+        hits:
+          type: integer
+          description: Number of cache hits
+          example: 42
+        misses:
+          type: integer
+          description: Number of cache misses
+          example: 3
+    
+    AuthenticatedUser:
+      type: object
+      required:
+        - authenticated
+        - user
+      properties:
+        authenticated:
+          type: boolean
+          example: true
+        user:
+          type: object
+          required:
+            - id
+            - email
+            - name
+            - provider
+          properties:
+            id:
+              type: integer
+              description: User ID
+              example: 1
+            email:
+              type: string
+              format: email
+              description: User email address
+              example: "user@example.com"
+            name:
+              type: string
+              description: User display name
+              example: "John Doe"
+            avatar:
+              type: string
+              format: uri
+              description: User avatar URL
+              example: "https://lh3.googleusercontent.com/a/default-user"
+            provider:
+              type: string
+              description: OAuth provider
+              enum: [google, wechat]
+              example: "google"
+    
+    UnauthenticatedUser:
+      type: object
+      required:
+        - authenticated
+      properties:
+        authenticated:
+          type: boolean
+          example: false
+    
+    Error:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error type
+          example: "Validation failed"
+        message:
+          type: string
+          description: Detailed error message
+          example: "Text field is required"

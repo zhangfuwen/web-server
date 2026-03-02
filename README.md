@@ -187,15 +187,63 @@ sudo systemctl enable molt-server
 1. **文件浏览器**：`http://localhost:8080/`
 2. **GTD 任务管理**：`http://localhost:8080/gtd`
 3. **系统监控**：`http://localhost:8080/system-info`
-4. **静态文件**：`http://localhost:8080/static/`
+4. **API 文档**：`http://localhost:8080/api-docs/` 🆕
+5. **Bot Reports**：`http://localhost:8080/BotReports`
+6. **静态文件**：`http://localhost:8080/static/`
 
 ## API 接口
 
+### 📖 Interactive API Documentation
+
+Complete API documentation with interactive testing is available at:
+
+**Swagger UI:** `http://localhost:8081/api-docs/`
+
+The documentation includes:
+- All API endpoints with request/response schemas
+- Interactive testing directly from the browser
+- Authentication requirements
+- Example requests and responses
+- Downloadable OpenAPI specification
+
 ### GTD API
-- `GET /api/gtd/tasks` - 获取任务列表（支持 JSON 或 Markdown 格式）
-- `PUT /api/gtd/tasks` - 更新任务列表
-- `DELETE /api/gtd/tasks` - 清空所有任务
-- `GET /api/gtd/title?url=<URL>` - 提取网页标题
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/gtd/tasks` | Get all tasks organized by category |
+| `POST` | `/api/gtd/tasks` | Create a new task |
+| `PUT` | `/api/gtd/tasks` | Update tasks (bulk operation) |
+| `DELETE` | `/api/gtd/tasks` | Clear all tasks |
+| `GET` | `/api/gtd/title?url=<URL>` | Extract page title from URL |
+
+### System Info API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/system-info` | System metrics dashboard (HTML) |
+| `GET` | `/system-info/cache-stats` | Cache statistics (JSON) |
+
+### BotReports API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/bot-reports` | List all bot reports |
+| `GET` | `/api/bot-reports/{name}` | Get specific report |
+| `GET` | `/BotReports` | BotReports index page |
+
+### Authentication API (when enabled)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/login` | Login page with OAuth options |
+| `POST` | `/auth/login` | OAuth callback handler |
+| `POST` | `/auth/logout` | Logout and clear session |
+| `GET` | `/api/user` | Get current user info |
+
+### API Documentation Files
+
+- **OpenAPI Spec:** `docs/openapi.yaml`
+- **Swagger UI:** `static/api-docs/index.html`
 
 ## 开发指南
 

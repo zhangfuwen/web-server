@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Molt Server API Documentation</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css">
+  <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.11.0/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.11.0/favicon-16x16.png" sizes="16x16" />
+  <style>
+    html {
+      box-sizing: border-box;
+      overflow: -moz-scrollbars-vertical;
+      overflow-y: scroll;
+    }
+    
+    *,
+    *:before,
+    *:after {
+      box-sizing: inherit;
+    }
+    
+    body {
+      margin: 0;
+      background: #fafafa;
+    }
+    
+    .topbar {
+      background: #1b1b1b !important;
+    }
+    
+    .topbar .download-url-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .topbar .download-url-wrapper input[type="text"] {
+      min-width: 350px;
+      margin: 0;
+    }
+    
+    .swagger-ui .info {
+      margin: 20px 0;
+    }
+    
+    .swagger-ui .info h1 {
+      color: #1b1b1b;
+    }
+    
+    .swagger-ui .info .title small {
+      background: #49cc90;
+    }
+    
+    .swagger-ui .scheme-container {
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Custom header */
+    .api-header {
+      background: linear-gradient(135deg, #1b1b1b 0%, #2d2d2d 100%);
+      color: white;
+      padding: 20px 40px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .api-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    
+    .api-header p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    
+    .api-header a {
+      color: #49cc90;
+      text-decoration: none;
+    }
+    
+    .api-header a:hover {
+      text-decoration: underline;
+    }
+    
+    .quick-links {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .quick-links a {
+      display: inline-block;
+      background: rgba(73, 204, 144, 0.2);
+      color: #49cc90;
+      padding: 6px 12px;
+      border-radius: 4px;
+      margin-right: 10px;
+      font-size: 13px;
+      text-decoration: none;
+      border: 1px solid rgba(73, 204, 144, 0.3);
+    }
+    
+    .quick-links a:hover {
+      background: rgba(73, 204, 144, 0.3);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="api-header">
+    <h1>🚀 Molt Server API Documentation</h1>
+    <p>Interactive API documentation for Molt Server - GTD Task Management, System Monitoring, and Bot Reports</p>
+    <div class="quick-links">
+      <a href="/gtd" target="_blank">✅ GTD App</a>
+      <a href="/system-info" target="_blank">📊 System Monitor</a>
+      <a href="/BotReports" target="_blank">📰 Bot Reports</a>
+      <a href="/" target="_blank">🏠 Home</a>
+    </div>
+  </div>
+  
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" charset="UTF-8"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
+  
+  <script>
+    window.onload = function() {
+      // Build URL to openapi.yaml
+      const openApiUrl = window.location.origin + '/api-docs/openapi.yaml';
+      
+      const ui = SwaggerUIBundle({
+        url: openApiUrl,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        validatorUrl: null,
+        displayRequestDuration: true,
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+        docExpansion: 'list',
+        defaultModelsExpandDepth: 2,
+        defaultModelExpandDepth: 2,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+        onComplete: function() {
+          console.log('Swagger UI loaded successfully');
+        },
+        requestInterceptor: function(request) {
+          // Add credentials for cookie-based auth
+          request.credentials = 'include';
+          return request;
+        }
+      });
+      
+      window.ui = ui;
+      
+      // Add keyboard shortcut for focusing search
+      document.addEventListener('keydown', function(e) {
+        if (e.key === '/' && e.target.tagName !== 'INPUT') {
+          e.preventDefault();
+          const searchInput = document.querySelector('.swagger-ui .filter-container input');
+          if (searchInput) {
+            searchInput.focus();
+          }
+        }
+      });
+    };
+  </script>
+</body>
+</html>

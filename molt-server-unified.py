@@ -183,6 +183,12 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         elif path == '/BotReports' or path == '/BotReports/':
             return self.serve_bot_reports_index()
         
+        # API Documentation (Swagger UI)
+        elif path == '/api-docs' or path == '/api-docs/':
+            return self.serve_api_docs_index()
+        elif path == '/api-docs/openapi.yaml':
+            return self.serve_openapi_spec()
+        
         # GTD API endpoints (auth required if enabled)
         elif path == '/api/gtd/tasks':
             if AUTH_ENABLED:
@@ -1032,6 +1038,42 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 self.send_error(404, "BotReports index.html not found")
         except Exception as e:
             self.send_error(500, f"Error serving BotReports: {str(e)}")
+
+    def serve_api_docs_index(self):
+        """Serve Swagger UI for API documentation"""
+        try:
+            index_path = os.path.join(STATIC_DIR, 'api-docs', 'index.html')
+            if os.path.exists(index_path):
+                with open(index_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'public, max-age=3600')  # Cache for 1 hour
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_error(404, "API documentation not found")
+        except Exception as e:
+            self.send_error(500, f"Error serving API docs: {str(e)}")
+
+    def serve_openapi_spec(self):
+        """Serve OpenAPI specification (YAML)"""
+        try:
+            spec_path = os.path.join(os.path.dirname(__file__), 'docs', 'openapi.yaml')
+            if os.path.exists(spec_path):
+                with open(spec_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/yaml; charset=utf-8')
+                self.send_header('Cache-Control', 'public, max-age=3600')  # Cache for 1 hour
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_error(404, "OpenAPI specification not found")
+        except Exception as e:
+            self.send_error(500, f"Error serving OpenAPI spec: {str(e)}")
 
 
 def run(port=None, reloader=False):

@@ -262,6 +262,7 @@ STATIC_DIR=/home/admin/Code/molt_server/static  # optional override
 | 1.3 Structured Logging | 🟡 In Progress | - |
 | 1.4 Externalize Hardcoded Paths | 🟡 In Progress | - |
 | **1.5 JSON Schema Validation** | ✅ **Complete** | **2026-03-02** |
+| **2.3 API Documentation (OpenAPI/Swagger)** | ✅ **Complete** | **2026-03-02** |
 
 ### Phase 1 Summary
 
@@ -270,6 +271,12 @@ STATIC_DIR=/home/admin/Code/molt_server/static  # optional override
 - Invalid requests receive clear 400 Bad Request responses
 - Comprehensive documentation in `docs/API_VALIDATION.md`
 - Dependency added: `jsonschema>=4.17.0`
+
+**API Documentation (OpenAPI/Swagger)** has been successfully implemented:
+- Complete OpenAPI 3.0.3 specification in `docs/openapi.yaml`
+- Interactive Swagger UI at `/api-docs/`
+- All 14 API endpoints documented with schemas and examples
+- Authentication requirements clearly specified
 
 **Next Steps:** Continue with remaining Phase 1 items (1.1-1.4)
 
@@ -350,43 +357,51 @@ def serve_system_info(self):
 
 ---
 
-### 2.3 API Documentation (OpenAPI/Swagger) 🟢
+### 2.3 API Documentation (OpenAPI/Swagger) 🟢 ✅ **COMPLETE**
 
 **Problem:** No formal API documentation for GTD endpoints.
 
-**Solution:** Create OpenAPI 3.0 specification:
-```yaml
-openapi: 3.0.0
-info:
-  title: Molt Server GTD API
-  version: 1.0.0
-paths:
-  /api/gtd/tasks:
-    get:
-      summary: Get all tasks
-      responses:
-        '200':
-          description: List of tasks
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Task'
-    post:
-      summary: Create new task
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TaskInput'
-```
+**Solution:** Created comprehensive OpenAPI 3.0 specification with Swagger UI.
 
-**Deliverables:**
-- `docs/api/openapi.yaml` - OpenAPI specification
-- Swagger UI served at `/api/docs` (optional)
-- Auto-generated API client examples
+**Deliverables:** ✅ Completed
+- ✅ `docs/openapi.yaml` - OpenAPI 3.0.3 specification
+- ✅ `static/api-docs/index.html` - Swagger UI interface
+- ✅ `/api-docs` route added to server
+- ✅ `/api-docs/openapi.yaml` serves the spec
+
+**Implementation Details:**
+- Documented all API endpoints (GTD, System Info, BotReports, Auth)
+- Interactive API testing via Swagger UI
+- Request/response schemas with examples
+- Authentication requirements documented
+- Available at: `http://bot.xjbcode.fun:8081/api-docs/`
+
+**Files Created:**
+- ✅ `docs/openapi.yaml` - Complete OpenAPI specification (24KB)
+- ✅ `static/api-docs/index.html` - Swagger UI with custom styling
+- ✅ Updated `molt-server-unified.py` - Added `/api-docs` routes
+
+**Endpoints Documented:**
+1. **GTD API** (5 endpoints)
+   - `GET /api/gtd/tasks` - Get all tasks
+   - `POST /api/gtd/tasks` - Create new task
+   - `PUT /api/gtd/tasks` - Update tasks (bulk)
+   - `DELETE /api/gtd/tasks` - Clear all tasks
+   - `GET /api/gtd/title?url=` - Extract page title
+2. **System Info** (2 endpoints)
+   - `GET /system-info` - System metrics dashboard
+   - `GET /system-info/cache-stats` - Cache statistics
+3. **BotReports API** (3 endpoints)
+   - `GET /api/bot-reports` - List all reports
+   - `GET /api/bot-reports/{name}` - Get specific report
+   - `GET /BotReports` - BotReports index page
+4. **Authentication API** (4 endpoints)
+   - `GET /login` - Login page
+   - `POST /auth/login` - OAuth callback
+   - `POST /auth/logout` - Logout
+   - `GET /api/user` - Current user info
+
+**Total: 14 documented endpoints**
 
 ---
 
