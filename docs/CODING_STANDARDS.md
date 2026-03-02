@@ -1,6 +1,6 @@
 # 编程规范
 
-本文档定义了 Web Server 项目的编码标准和最佳实践。
+本文档定义了 Molt Server 项目的编码标准和最佳实践。
 
 ## 目录
 
@@ -56,7 +56,7 @@ def calcUsrScr(uid, w=1.0):  # 缩写不清晰
 
 ### 目录组织
 ```
-src/web_server/          # 主包目录
+src/molt_server/          # 主包目录
 ├── __init__.py         # 包初始化文件
 ├── server.py           # 主服务器逻辑
 ├── gtd.py              # GTD 功能模块
@@ -199,8 +199,8 @@ def extract_title_from_url(url: str) -> str:
         ValueError: 如果 URL 格式无效
         
     Examples:
-        >>> extract_title_from_url('https://github.com/zhangfuwen/web-server')
-        'Web Server'
+        >>> extract_title_from_url('https://github.com/zhangfuwen/molt-server')
+        'Molt Server'
     """
     # 实现...
 ```
@@ -248,7 +248,7 @@ tests/
 
 ```python
 import pytest
-from web_server.gtd import parse_markdown_to_json
+from molt_server.gtd import parse_markdown_to_json
 
 class TestGTDParser:
     """GTD 解析器测试"""
@@ -297,7 +297,7 @@ pytest tests/test_server.py
 pytest tests/test_gtd.py::TestGTDParser
 
 # 生成测试覆盖率报告
-pytest --cov=src/web_server --cov-report=html
+pytest --cov=src/molt_server --cov-report=html
 ```
 
 ## 提交规范

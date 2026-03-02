@@ -1,29 +1,29 @@
-# Web Server Deployment Guide
+# Molt Server Deployment Guide
 
 ## Overview
 
-This document provides complete deployment instructions for the Web Server with GTD task management system. The deployment follows Linux FHS (Filesystem Hierarchy Standard) and includes systemd integration.
+This document provides complete deployment instructions for the Molt Server with GTD task management system. The deployment follows Linux FHS (Filesystem Hierarchy Standard) and includes systemd integration.
 
 ## File System Layout
 
 After installation, the system will have the following structure:
 
 ```
-/opt/web-server/           # Main application directory
+/opt/molt-server/           # Main application directory
 ├── bin/                   # Executables
-│   └── web-server        # Main launcher script
+│   └── molt-server        # Main launcher script
 ├── lib/                   # Python modules
-│   ├── web_server.py     # Main server module
+│   ├── molt_server.py     # Main server module
 │   └── gtd.py            # GTD module
 ├── etc/                   # Configuration
-│   └── web-server.conf   # Main configuration
+│   └── molt-server.conf   # Main configuration
 ├── var/                   # Runtime data
 │   ├── log/              # Application logs
 │   └── run/              # PID files
 ├── share/                 # Static resources
 │   └── static/           # Web static files
 └── systemd/              # Service files
-    └── web-server.service
+    └── molt-server.service
 
 # Web root and data directories
 /var/www/html/            # Web server root directory
@@ -31,9 +31,9 @@ After installation, the system will have the following structure:
     └── tasks.md          # GTD tasks file
 
 # Symlinks
-/usr/local/bin/web-server → /opt/web-server/bin/web-server
-/etc/web-server → /opt/web-server/etc/
-/var/log/web-server → /opt/web-server/var/log/
+/usr/local/bin/molt-server → /opt/molt-server/bin/molt-server
+/etc/molt-server → /opt/molt-server/etc/
+/var/log/molt-server → /opt/molt-server/var/log/
 ```
 
 ## Prerequisites
@@ -48,8 +48,8 @@ After installation, the system will have the following structure:
 
 ```bash
 # 1. Clone or download the project
-git clone https://github.com/zhangfuwen/web-server.git
-cd web-server
+git clone https://github.com/zhangfuwen/molt-server.git
+cd molt-server
 
 # 2. Make install script executable
 chmod +x install.sh
@@ -62,28 +62,28 @@ sudo ./install.sh
 
 ```bash
 # 1. Create directories
-sudo mkdir -p /opt/web-server/{bin,lib,etc,var/{data/gtd,log,run},share/static,systemd}
-sudo mkdir -p /etc/web-server /var/log/web-server /var/lib/web-server
+sudo mkdir -p /opt/molt-server/{bin,lib,etc,var/{data/gtd,log,run},share/static,systemd}
+sudo mkdir -p /etc/molt-server /var/log/molt-server /var/lib/molt-server
 
 # 2. Copy files
-sudo cp web-server-unified.py /opt/web-server/lib/web_server.py
-sudo cp gtd.py /opt/web-server/lib/
-sudo cp -r static/* /opt/web-server/share/static/
+sudo cp molt-server-unified.py /opt/molt-server/lib/molt_server.py
+sudo cp gtd.py /opt/molt-server/lib/
+sudo cp -r static/* /opt/molt-server/share/static/
 
 # 3. Create executable
-sudo tee /opt/web-server/bin/web-server << 'EOF'
+sudo tee /opt/molt-server/bin/molt-server << 'EOF'
 #!/usr/bin/env python3
 import sys
 import os
-sys.path.insert(0, '/opt/web-server/lib')
-from web_server import main
+sys.path.insert(0, '/opt/molt-server/lib')
+from molt_server import main
 if __name__ == '__main__':
     main()
 EOF
-sudo chmod +x /opt/web-server/bin/web-server
+sudo chmod +x /opt/molt-server/bin/molt-server
 
 # 4. Create symlink
-sudo ln -sf /opt/web-server/bin/web-server /usr/local/bin/web-server
+sudo ln -sf /opt/molt-server/bin/molt-server /usr/local/bin/molt-server
 
 # 5. Install dependencies
 sudo pip3 install requests beautifulsoup4 psutil
@@ -93,7 +93,7 @@ sudo pip3 install requests beautifulsoup4 psutil
 
 ### Main Configuration File
 
-The main configuration file is located at `/etc/web-server/web-server.conf`:
+The main configuration file is located at `/etc/molt-server/molt-server.conf`:
 
 ```ini
 [server]
@@ -107,9 +107,9 @@ data_dir = /var/www/html/gtd
 tasks_file = /var/www/html/gtd/tasks.md
 
 [paths]
-static_dir = /opt/web-server/share/static
-log_dir = /var/log/web-server
-pid_file = /var/run/web-server.pid
+static_dir = /opt/molt-server/share/static
+log_dir = /var/log/molt-server
+pid_file = /var/run/molt-server.pid
 ```
 
 ### Environment Variables
@@ -128,35 +128,35 @@ export WEB_SERVER_LOG_LEVEL=INFO
 
 ```bash
 # Start the service
-sudo systemctl start web-server
+sudo systemctl start molt-server
 
 # Stop the service
-sudo systemctl stop web-server
+sudo systemctl stop molt-server
 
 # Restart the service
-sudo systemctl restart web-server
+sudo systemctl restart molt-server
 
 # Check status
-sudo systemctl status web-server
+sudo systemctl status molt-server
 
 # Enable auto-start on boot
-sudo systemctl enable web-server
+sudo systemctl enable molt-server
 
 # View logs
-sudo journalctl -u web-server -f
+sudo journalctl -u molt-server -f
 ```
 
 ### Manual Control
 
 ```bash
 # Start manually (for debugging)
-web-server
+molt-server
 
 # Start with specific port
-web-server 8080
+molt-server 8080
 
 # Start with hot reload (development)
-web-server --reload 8080
+molt-server --reload 8080
 ```
 
 ## Data Management
@@ -170,13 +170,13 @@ web-server --reload 8080
 
 ### Log Files
 
-- Location: `/var/log/web-server/`
+- Location: `/var/log/molt-server/`
 - Rotation: Managed by systemd/journald
-- View logs: `sudo journalctl -u web-server`
+- View logs: `sudo journalctl -u molt-server`
 
 ### Static Files
 
-- Location: `/opt/web-server/share/static/`
+- Location: `/opt/molt-server/share/static/`
 - Subdirectories:
   - `css/` - Stylesheets
   - `js/` - JavaScript files
@@ -229,7 +229,7 @@ The systemd service includes security features:
 sudo cp /var/www/html/gtd/tasks.md /backup/tasks-$(date +%Y%m%d).md
 
 # Backup configuration
-sudo tar -czf /backup/web-server-config-$(date +%Y%m%d).tar.gz /etc/web-server/
+sudo tar -czf /backup/molt-server-config-$(date +%Y%m%d).tar.gz /etc/molt-server/
 
 # Backup web root (optional)
 sudo tar -czf /backup/web-root-$(date +%Y%m%d).tar.gz /var/www/html/
@@ -239,36 +239,36 @@ sudo tar -czf /backup/web-root-$(date +%Y%m%d).tar.gz /var/www/html/
 
 ```bash
 # 1. Stop service
-sudo systemctl stop web-server
+sudo systemctl stop molt-server
 
 # 2. Backup data
-sudo cp /var/lib/web-server/gtd/tasks.md /tmp/tasks-backup.md
+sudo cp /var/lib/molt-server/gtd/tasks.md /tmp/tasks-backup.md
 
 # 3. Update files
-sudo cp new-web_server.py /opt/web-server/lib/web_server.py
-sudo cp new-gtd.py /opt/web-server/lib/gtd.py
+sudo cp new-molt_server.py /opt/molt-server/lib/molt_server.py
+sudo cp new-gtd.py /opt/molt-server/lib/gtd.py
 
 # 4. Restore data
-sudo cp /tmp/tasks-backup.md /var/lib/web-server/gtd/tasks.md
+sudo cp /tmp/tasks-backup.md /var/lib/molt-server/gtd/tasks.md
 
 # 5. Start service
-sudo systemctl start web-server
+sudo systemctl start molt-server
 ```
 
 ### Monitoring
 
 ```bash
 # Check service status
-sudo systemctl status web-server
+sudo systemctl status molt-server
 
 # Monitor logs
-sudo journalctl -u web-server --since "1 hour ago"
+sudo journalctl -u molt-server --since "1 hour ago"
 
 # Check disk space
-df -h /var/lib/web-server/
+df -h /var/lib/molt-server/
 
 # Check memory usage
-ps aux | grep web-server
+ps aux | grep molt-server
 ```
 
 ## Troubleshooting
@@ -281,13 +281,13 @@ ps aux | grep web-server
    sudo lsof -i :8080
    
    # Kill process or change port in config
-   sudo nano /etc/web-server/web-server.conf
+   sudo nano /etc/molt-server/molt-server.conf
    ```
 
 2. **Permission denied**
    ```bash
    # Fix permissions
-   sudo chown -R webserver:webserver /opt/web-server /var/lib/web-server /var/log/web-server
+   sudo chown -R webserver:webserver /opt/molt-server /var/lib/molt-server /var/log/molt-server
    ```
 
 3. **Python dependencies missing**
@@ -298,17 +298,17 @@ ps aux | grep web-server
 4. **Service won't start**
    ```bash
    # Check logs
-   sudo journalctl -u web-server -n 50
+   sudo journalctl -u molt-server -n 50
    
    # Test manually
-   sudo -u webserver web-server
+   sudo -u webserver molt-server
    ```
 
 ### Log Locations
 
-- Systemd logs: `journalctl -u web-server`
-- Application logs: `/var/log/web-server/` (if configured)
-- Error logs: `journalctl -u web-server -p err`
+- Systemd logs: `journalctl -u molt-server`
+- Application logs: `/var/log/molt-server/` (if configured)
+- Error logs: `journalctl -u molt-server -p err`
 
 ## Uninstallation
 
@@ -317,11 +317,11 @@ ps aux | grep web-server
 sudo ./uninstall.sh
 
 # Or manually
-sudo systemctl stop web-server
-sudo systemctl disable web-server
-sudo rm -f /etc/systemd/system/web-server.service
-sudo rm -rf /opt/web-server /etc/web-server /var/log/web-server /var/lib/web-server
-sudo rm -f /usr/local/bin/web-server
+sudo systemctl stop molt-server
+sudo systemctl disable molt-server
+sudo rm -f /etc/systemd/system/molt-server.service
+sudo rm -rf /opt/molt-server /etc/molt-server /var/log/molt-server /var/lib/molt-server
+sudo rm -f /usr/local/bin/molt-server
 sudo userdel webserver 2>/dev/null || true
 sudo groupdel webserver 2>/dev/null || true
 ```
@@ -340,9 +340,9 @@ sudo groupdel webserver 2>/dev/null || true
 ## Support
 
 For issues and questions:
-1. Check logs: `sudo journalctl -u web-server`
-2. Test manually: `sudo -u webserver web-server`
-3. Review configuration: `/etc/web-server/web-server.conf`
+1. Check logs: `sudo journalctl -u molt-server`
+2. Test manually: `sudo -u webserver molt-server`
+3. Review configuration: `/etc/molt-server/molt-server.conf`
 
 ## License
 

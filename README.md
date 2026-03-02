@@ -1,4 +1,4 @@
-# Web Server with GTD Task Management
+# Molt Server with GTD Task Management
 
 一个功能丰富的 Python HTTP 服务器，包含文件浏览、静态文件服务和完整的 GTD（Getting Things Done）任务管理系统。
 
@@ -28,14 +28,14 @@
 ## 项目结构
 
 ```
-web-server/
+molt-server/
 ├── src/                    # 源代码
-│   ├── web_server/        # 主服务器模块
+│   ├── molt_server/        # 主服务器模块
 │   │   ├── __init__.py
 │   │   ├── server.py      # 主服务器逻辑
 │   │   └── gtd.py         # GTD 模块
 │   └── scripts/           # 可执行脚本
-│       └── web-server     # 启动脚本
+│       └── molt-server     # 启动脚本
 ├── static/                # 静态文件
 │   ├── css/
 │   ├── js/
@@ -43,7 +43,7 @@ web-server/
 │   └── gtd/
 │       └── index.html     # GTD 前端界面
 ├── config/                # 配置文件示例
-│   └── web-server.conf.example
+│   └── molt-server.conf.example
 ├── data/                  # 示例数据文件
 │   └── gtd/
 │       └── tasks.md.example
@@ -73,13 +73,13 @@ pip install -r requirements.txt
 ### 开发运行
 ```bash
 # 使用默认端口 8081
-python3 src/scripts/web-server
+python3 src/scripts/molt-server
 
 # 指定端口
-python3 src/scripts/web-server 8080
+python3 src/scripts/molt-server 8080
 
 # 启用热重载（开发）
-python3 src/scripts/web-server --reload 8080
+python3 src/scripts/molt-server --reload 8080
 ```
 
 ### 作为 Python 包安装
@@ -88,7 +88,7 @@ python3 src/scripts/web-server --reload 8080
 pip install -e .
 
 # 然后可以直接运行
-web-server 8080
+molt-server 8080
 ```
 
 ## 配置
@@ -104,7 +104,7 @@ export GTD_DATA_DIR=/var/www/html/gtd
 ### 配置文件
 复制示例配置文件并修改：
 ```bash
-cp config/web-server.conf.example /etc/web-server/web-server.conf
+cp config/molt-server.conf.example /etc/molt-server/molt-server.conf
 ```
 
 配置文件格式：
@@ -120,9 +120,9 @@ data_dir = /var/www/html/gtd
 tasks_file = /var/www/html/gtd/tasks.md
 
 [paths]
-static_dir = /opt/web-server/share/static
-log_dir = /var/log/web-server
-pid_file = /var/run/web-server.pid
+static_dir = /opt/molt-server/share/static
+log_dir = /var/log/molt-server
+pid_file = /var/run/molt-server.pid
 ```
 
 ## 生产部署
@@ -130,8 +130,8 @@ pid_file = /var/run/web-server.pid
 ### 使用安装脚本（推荐）
 ```bash
 # 1. 克隆项目
-git clone https://github.com/zhangfuwen/web-server.git
-cd web-server
+git clone https://github.com/zhangfuwen/molt-server.git
+cd molt-server
 
 # 2. 运行安装脚本
 chmod +x scripts/install.sh
@@ -141,43 +141,43 @@ sudo ./scripts/install.sh
 ### 手动部署
 ```bash
 # 创建目录结构
-sudo mkdir -p /opt/web-server/{bin,lib,etc,var/log,share/static}
-sudo mkdir -p /var/www/html/gtd /etc/web-server /var/log/web-server
+sudo mkdir -p /opt/molt-server/{bin,lib,etc,var/log,share/static}
+sudo mkdir -p /var/www/html/gtd /etc/molt-server /var/log/molt-server
 
 # 复制文件
-sudo cp -r src/web_server/* /opt/web-server/lib/
-sudo cp -r static/* /opt/web-server/share/static/
-sudo cp config/web-server.conf.example /etc/web-server/web-server.conf
+sudo cp -r src/molt_server/* /opt/molt-server/lib/
+sudo cp -r static/* /opt/molt-server/share/static/
+sudo cp config/molt-server.conf.example /etc/molt-server/molt-server.conf
 
 # 创建启动脚本
-sudo tee /opt/web-server/bin/web-server << 'EOF'
+sudo tee /opt/molt-server/bin/molt-server << 'EOF'
 #!/usr/bin/env python3
 import sys
-sys.path.insert(0, '/opt/web-server/lib')
-from web_server.server import main
+sys.path.insert(0, '/opt/molt-server/lib')
+from molt_server.server import main
 if __name__ == '__main__':
     main()
 EOF
-sudo chmod +x /opt/web-server/bin/web-server
-sudo ln -sf /opt/web-server/bin/web-server /usr/local/bin/web-server
+sudo chmod +x /opt/molt-server/bin/molt-server
+sudo ln -sf /opt/molt-server/bin/molt-server /usr/local/bin/molt-server
 ```
 
 ### 系统服务管理
 ```bash
 # 启动服务
-sudo systemctl start web-server
+sudo systemctl start molt-server
 
 # 停止服务
-sudo systemctl stop web-server
+sudo systemctl stop molt-server
 
 # 查看状态
-sudo systemctl status web-server
+sudo systemctl status molt-server
 
 # 查看日志
-sudo journalctl -u web-server -f
+sudo journalctl -u molt-server -f
 
 # 开机自启
-sudo systemctl enable web-server
+sudo systemctl enable molt-server
 ```
 
 ## 访问服务
@@ -200,13 +200,13 @@ sudo systemctl enable web-server
 ## 开发指南
 
 ### 代码结构
-- `src/web_server/server.py` - 主服务器逻辑，处理 HTTP 请求
-- `src/web_server/gtd.py` - GTD 功能模块，包含任务解析和 API
+- `src/molt_server/server.py` - 主服务器逻辑，处理 HTTP 请求
+- `src/molt_server/gtd.py` - GTD 功能模块，包含任务解析和 API
 - `static/gtd/index.html` - GTD 前端界面（纯 HTML/JS/CSS）
 
 ### 添加新功能
 1. 在 `server.py` 中添加新的请求处理器
-2. 如果需要新模块，在 `src/web_server/` 下创建
+2. 如果需要新模块，在 `src/molt_server/` 下创建
 3. 更新前端界面（如果需要）
 4. 添加测试到 `tests/` 目录
 
@@ -230,7 +230,7 @@ python -m pytest tests/test_server.py
 
 2. **权限问题**：
    ```bash
-   sudo chown -R webserver:webserver /opt/web-server /var/www/html /var/log/web-server
+   sudo chown -R webserver:webserver /opt/molt-server /var/www/html /var/log/molt-server
    ```
 
 3. **依赖缺失**：
@@ -240,14 +240,14 @@ python -m pytest tests/test_server.py
 
 4. **服务启动失败**：
    ```bash
-   sudo journalctl -u web-server -n 50
-   sudo -u webserver web-server  # 手动测试
+   sudo journalctl -u molt-server -n 50
+   sudo -u webserver molt-server  # 手动测试
    ```
 
 ### 日志位置
-- 系统日志：`journalctl -u web-server`
-- 应用日志：`/var/log/web-server/`（如果配置）
-- 错误日志：`journalctl -u web-server -p err`
+- 系统日志：`journalctl -u molt-server`
+- 应用日志：`/var/log/molt-server/`（如果配置）
+- 错误日志：`journalctl -u molt-server -p err`
 
 ## 安全建议
 
@@ -273,6 +273,6 @@ python -m pytest tests/test_server.py
 
 ## 支持
 
-- 问题报告：[GitHub Issues](https://github.com/zhangfuwen/web-server/issues)
+- 问题报告：[GitHub Issues](https://github.com/zhangfuwen/molt-server/issues)
 - 文档：[docs/](docs/) 目录
 - 部署指南：[DEPLOYMENT.md](docs/DEPLOYMENT.md)

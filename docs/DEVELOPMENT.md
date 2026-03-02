@@ -1,6 +1,6 @@
 # 开发指南
 
-本文档为 Web Server 项目的开发人员提供详细的开发环境设置、工作流程和开发工具指南。
+本文档为 Molt Server 项目的开发人员提供详细的开发环境设置、工作流程和开发工具指南。
 
 ## 目录
 
@@ -23,8 +23,8 @@
 
 ### 2. 克隆项目
 ```bash
-git clone https://github.com/zhangfuwen/web-server.git
-cd web-server
+git clone https://github.com/zhangfuwen/molt-server.git
+cd molt-server
 ```
 
 ### 3. 创建虚拟环境
@@ -52,7 +52,7 @@ pip install pytest black flake8 mypy
 ### 5. 环境变量配置
 创建 `.env` 文件（可选）：
 ```bash
-cp config/web-server.conf.example .env
+cp config/molt-server.conf.example .env
 ```
 
 编辑 `.env` 文件，设置必要的环境变量：
@@ -74,9 +74,9 @@ RELOADER=true
 ## 项目结构
 
 ```
-web-server/
+molt-server/
 ├── src/                    # 源代码目录
-│   └── web_server/        # Python 包
+│   └── molt_server/        # Python 包
 │       ├── __init__.py    # 包初始化
 │       ├── server.py      # 主服务器逻辑
 │       └── gtd.py         # GTD 功能模块
@@ -100,13 +100,13 @@ web-server/
 ### 1. 启动开发服务器
 ```bash
 # 使用开发模式（支持热重载）
-python -m src.web_server.server --reloader
+python -m src.molt_server.server --reloader
 
 # 或直接运行
-python src/web_server/server.py
+python src/molt_server/server.py
 
 # 指定端口
-python src/web_server/server.py --port 8081
+python src/molt_server/server.py --port 8081
 ```
 
 ### 2. 代码修改流程
@@ -151,7 +151,7 @@ python src/web_server/server.py --port 8081
 ### 3. 热重载开发
 服务器支持热重载，修改代码后会自动重启：
 ```bash
-python -m src.web_server.server --reloader
+python -m src.molt_server.server --reloader
 ```
 
 ## 代码质量工具
@@ -175,13 +175,13 @@ python -m src.web_server.server --reloader
 
 - **pylint**: 更全面的代码分析
   ```bash
-  pylint src/web_server/
+  pylint src/molt_server/
   ```
 
 ### 3. 类型检查
 - **mypy**: 静态类型检查
   ```bash
-  mypy src/web_server/
+  mypy src/molt_server/
   ```
 
 ### 4. 预提交钩子
@@ -240,14 +240,14 @@ pytest tests/test_gtd.py::TestGTDParser
 pytest tests/test_gtd.py::TestGTDParser::test_parse_simple_task
 
 # 生成测试覆盖率报告
-pytest --cov=src/web_server --cov-report=html
+pytest --cov=src/molt_server --cov-report=html
 ```
 
 ### 3. 编写测试
 参考示例：
 ```python
 import pytest
-from src.web_server.gtd import parse_markdown_to_json
+from src.molt_server.gtd import parse_markdown_to_json
 
 class TestGTDFunctionality:
     """GTD 功能测试"""
@@ -310,11 +310,11 @@ logger.debug(f"处理请求: {request.path}")
 ### 2. 调试模式启动
 ```bash
 # 启用调试日志
-python src/web_server/server.py --debug
+python src/molt_server/server.py --debug
 
 # 或设置环境变量
 export WEB_SERVER_DEBUG=true
-python src/web_server/server.py
+python src/molt_server/server.py
 ```
 
 ### 3. 使用 pdb 调试
@@ -397,19 +397,19 @@ sudo lsof -i :8081
 sudo kill -9 <PID>
 
 # 或使用其他端口
-python src/web_server/server.py --port 8082
+python src/molt_server/server.py --port 8082
 ```
 
 ### 2. 导入错误
 ```bash
 # 确保在项目根目录运行
-cd /path/to/web-server
+cd /path/to/molt-server
 
 # 确保虚拟环境已激活
 source .venv/bin/activate
 
 # 确保 Python 路径正确
-export PYTHONPATH=/path/to/web-server:$PYTHONPATH
+export PYTHONPATH=/path/to/molt-server:$PYTHONPATH
 ```
 
 ### 3. 依赖问题
@@ -434,16 +434,16 @@ export GTD_TASKS_FILE=~/gtd/tasks.md
 ### 5. 热重载不工作
 ```bash
 # 确保使用 --reloader 参数
-python -m src.web_server.server --reloader
+python -m src.molt_server.server --reloader
 
 # 或设置环境变量
 export RELOADER=true
-python src/web_server/server.py
+python src/molt_server/server.py
 ```
 
 ## 获取帮助
 
-- **查看日志**：`tail -f /var/log/web-server.log`
+- **查看日志**：`tail -f /var/log/molt-server.log`
 - **查看文档**：`docs/` 目录下的文档
 - **提交 Issue**：GitHub Issues 页面
 - **调试建议**：使用 `--debug` 参数启动服务器
@@ -452,4 +452,4 @@ python src/web_server/server.py
 
 **Happy Coding!** 🚀
 
-遵循本指南将帮助您高效地进行 Web Server 项目的开发工作。如有问题，请参考相关文档或联系项目维护者。
+遵循本指南将帮助您高效地进行 Molt Server 项目的开发工作。如有问题，请参考相关文档或联系项目维护者。

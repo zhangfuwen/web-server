@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="web-server",
+    name="molt-server",
     version="1.0.0",
     description="Web Server with GTD Task Management",
     author="Your Name",
@@ -14,7 +14,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "web-server=web_server.server:main",
+            "molt-server=molt_server.server:main",
         ],
     },
     include_package_data=True,

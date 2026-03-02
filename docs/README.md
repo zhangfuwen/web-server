@@ -1,4 +1,4 @@
-# Web Server
+# Molt Server
 
 一个简单而强大的 Python HTTP 服务器，用于文件浏览和静态文件服务。
 
@@ -23,15 +23,15 @@ pip install -r requirements.txt
 
 ```bash
 # 默认端口 80，根目录 /var/www/html
-python3 web-server-improved.py
+python3 molt-server-improved.py
 
 # 指定端口
-python3 web-server-improved.py 8080
+python3 molt-server-improved.py 8080
 
 # 通过环境变量设置
 export WEB_SERVER_BASE_DIR=/path/to/directory
 export WEB_SERVER_PORT=8080
-python3 web-server-improved.py
+python3 molt-server-improved.py
 ```
 
 ## 配置

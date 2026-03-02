@@ -26,12 +26,36 @@ try:
 except ImportError:
     BEAUTIFULSOUP_AVAILABLE = False
 
-# 设置工作目录 - 支持通过环境变量 WEB_ROOT 配置，默认为 /var/www/html
-BASE_DIR = os.environ.get('WEB_ROOT', '/var/www/html')
+# 设置工作目录 - 使用当前目录
+BASE_DIR = os.getcwd()
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
-# 导入 GTD 模块
-from gtd import GTDHandler, GTD_TASKS_FILE
+# 配置路径（可以在运行时通过环境变量或配置文件覆盖）
+def get_config_paths():
+    """获取配置路径，支持环境变量覆盖"""
+    base_dir = os.environ.get('WEB_SERVER_BASE_DIR', BASE_DIR)
+    static_dir = os.environ.get('WEB_SERVER_STATIC_DIR', os.path.join(base_dir, 'static'))
+    gtd_data_dir = os.environ.get('GTD_DATA_DIR', os.path.join(base_dir, 'gtd'))
+    gtd_tasks_file = os.environ.get('GTD_TASKS_FILE', os.path.join(gtd_data_dir, 'tasks.md'))
+    
+    return {
+        'base_dir': base_dir,
+        'static_dir': static_dir,
+        'gtd_data_dir': gtd_data_dir,
+        'gtd_tasks_file': gtd_tasks_file
+    }
+
+# 初始化配置
+config_paths = get_config_paths()
+
+# 设置 GTD 模块的路径变量
+import molt_server.gtd as gtd_module
+gtd_module.BASE_DIR = config_paths['base_dir']
+gtd_module.GTD_TASKS_FILE = config_paths['gtd_tasks_file']
+gtd_module.STATIC_DIR = config_paths['static_dir']
+
+# 导入 GTD 模块（现在在同一个包中）
+from .gtd import GTDHandler, GTD_TASKS_FILE
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in separate threads."""
@@ -102,12 +126,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
         # 系统信息页面
         if path == '/system-info':
             return self.serve_system_info()
-        
-        # BotReports endpoints
-        elif path == '/api/bot-reports':
-            return self.serve_bot_reports_list()
-        elif path == '/BotReports' or path == '/BotReports/':
-            return self.serve_bot_reports_index()
         
         # GTD API endpoints
         elif path == '/api/gtd/tasks':
@@ -402,10 +420,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
     def serve_file(self, file_path):
         """Serve a single file"""
         try:
-            # Check if it's a Markdown file - render as HTML instead of downloading
-            if file_path.endswith('.md') or file_path.endswith('.markdown'):
-                return self.serve_markdown_file(file_path)
-            
             with open(file_path, 'rb') as f:
                 content = f.read()
             
@@ -420,129 +434,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
             
         except Exception as e:
             self.send_error(404, f"无法读取文件: {str(e)}")
-
-    def serve_markdown_file(self, file_path):
-        """Render Markdown file as HTML"""
-        try:
-            import markdown
-            
-            # Read the markdown file
-            with open(file_path, 'r', encoding='utf-8') as f:
-                md_content = f.read()
-            
-            # Convert to HTML
-            html_content = markdown.markdown(md_content, extensions=['fenced_code', 'tables'])
-            
-            # Get relative path for navigation
-            rel_path = os.path.relpath(file_path, BASE_DIR)
-            parent_dir = os.path.dirname(rel_path)
-            if parent_dir == '.':
-                parent_dir = '/'
-            else:
-                parent_dir = '/' + parent_dir
-            
-            # Create HTML page with styling
-            html_page = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>{os.path.basename(file_path)}</title>
-    <style>
-        body {{ 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            max-width: 1200px; 
-            margin: 20px auto; 
-            padding: 20px; 
-            line-height: 1.6;
-            color: #333;
-        }}
-        h1, h2, h3, h4, h5, h6 {{ 
-            color: #2c3e50; 
-            margin-top: 1.5em; 
-            margin-bottom: 0.8em;
-        }}
-        h1 {{ border-bottom: 2px solid #eee; padding-bottom: 0.3em; }}
-        h2 {{ border-bottom: 1px solid #eee; padding-bottom: 0.3em; }}
-        p {{ margin: 1em 0; }}
-        a {{ color: #3498db; text-decoration: none; }}
-        a:hover {{ text-decoration: underline; }}
-        code {{ 
-            background: #f8f9fa; 
-            padding: 2px 4px; 
-            border-radius: 3px; 
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 0.9em;
-        }}
-        pre {{ 
-            background: #f8f9fa; 
-            padding: 16px; 
-            border-radius: 6px; 
-            overflow-x: auto;
-            margin: 1em 0;
-        }}
-        pre code {{ 
-            background: none; 
-            padding: 0; 
-            border-radius: 0;
-            font-size: 0.95em;
-        }}
-        blockquote {{ 
-            border-left: 4px solid #ddd; 
-            padding-left: 16px; 
-            margin: 1em 0; 
-            color: #666;
-        }}
-        table {{ 
-            border-collapse: collapse; 
-            width: 100%; 
-            margin: 1em 0;
-        }}
-        th, td {{ 
-            border: 1px solid #ddd; 
-            padding: 12px; 
-            text-align: left;
-        }}
-        th {{ background: #f8f9fa; }}
-        tr:nth-child(even) {{ background: #f9f9f9; }}
-        ul, ol {{ padding-left: 2em; margin: 1em 0; }}
-        li {{ margin: 0.5em 0; }}
-        .nav-link {{ 
-            background: #6c757d; 
-            color: white; 
-            padding: 8px 12px; 
-            text-decoration: none; 
-            border-radius: 4px; 
-            display: inline-block;
-            margin-bottom: 20px;
-        }}
-        .nav-link:hover {{ background: #5a6268; }}
-    </style>
-</head>
-<body>
-    <a href="{parent_dir}" class="nav-link">🏠 返回上级目录</a>
-    <div class="markdown-content">
-        {html_content}
-    </div>
-</body>
-</html>"""
-            
-            self.send_response(200)
-            self.send_header("Content-type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(html_page.encode('utf-8'))))
-            self.end_headers()
-            self.wfile.write(html_page.encode('utf-8'))
-            
-        except ImportError:
-            # Fallback to plain text if markdown module not available
-            with open(file_path, 'rb') as f:
-                content = f.read()
-            self.send_response(200)
-            self.send_header("Content-type", "text/plain; charset=utf-8")
-            self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-        except Exception as e:
-            self.send_error(404, f"无法读取Markdown文件: {str(e)}")
 
     def guess_type(self, path):
         """Simple MIME type guessing"""
@@ -564,8 +455,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
             return 'image/x-icon'
         elif path.endswith('.txt'):
             return 'text/plain'
-        elif path.endswith('.md') or path.endswith('.markdown'):
-            return 'text/markdown'
         else:
             return 'application/octet-stream'
 
@@ -856,57 +745,6 @@ class UnifiedHTTPRequestHandler(GTDHandler, BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error(500, f"系统监控错误: {str(e)}")
 
-    def serve_bot_reports_list(self):
-        """Serve BotReports list as JSON"""
-        try:
-            bot_reports_dir = os.path.join(BASE_DIR, 'BotReports')
-            reports = []
-            
-            # Scan directory for HTML files (excluding index.html)
-            for filename in os.listdir(bot_reports_dir):
-                if filename.endswith('.html') and filename != 'index.html':
-                    file_path = os.path.join(bot_reports_dir, filename)
-                    if os.path.isfile(file_path):
-                        mtime = os.path.getmtime(file_path)
-                        reports.append({
-                            'filename': filename,
-                            'date': str(int(mtime))
-                        })
-            
-            # Sort by date (newest first)
-            reports.sort(key=lambda x: int(x['date']), reverse=True)
-            
-            # Send JSON response
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Cache-Control', 'no-cache')
-            self.end_headers()
-            self.wfile.write(json.dumps(reports, indent=4).encode('utf-8'))
-            
-        except Exception as e:
-            self.send_error(500, f"Error loading BotReports: {str(e)}")
-
-    def serve_bot_reports_index(self):
-        """Serve BotReports index.html"""
-        try:
-            # Serve from web_server project directory
-            index_path = os.path.join(os.path.dirname(__file__), 'botreports', 'index.html')
-            if os.path.exists(index_path):
-                with open(index_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/html; charset=utf-8')
-                self.send_header('Cache-Control', 'no-cache')
-                self.end_headers()
-                self.wfile.write(content.encode('utf-8'))
-            else:
-                self.send_error(404, "BotReports index.html not found")
-        except Exception as e:
-            self.send_error(500, f"Error serving BotReports: {str(e)}")
-
-
 def run(port=8081, reloader=False):
     """运行服务器
     
@@ -928,7 +766,8 @@ def run(port=8081, reloader=False):
     print(f"Moltbot WebUI available at: http://bot.xjbcode.fun:18789")
     httpd.serve_forever()
 
-if __name__ == '__main__':
+def main():
+    """主函数，用于命令行调用"""
     import sys
     port = 8081
     reloader = False
@@ -947,3 +786,6 @@ if __name__ == '__main__':
         i += 1
     
     run(port, reloader)
+
+if __name__ == '__main__':
+    main()
