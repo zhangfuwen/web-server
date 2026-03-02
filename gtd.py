@@ -16,6 +16,9 @@ import uuid
 # Import configuration
 from config import APP_DIR, WEB_ROOT, GTD_DATA_DIR, GTD_TASKS_FILE
 
+# Import schema validation
+from schema import validate_task, validate_url, get_validation_error_response
+
 # GTD tasks file path - now supports per-user directories
 BASE_DIR = APP_DIR
 GTD_BASE_DIR = GTD_DATA_DIR
@@ -341,6 +344,17 @@ class GTDHandler:
             body = self.rfile.read(content_length).decode('utf-8')
             data = json.loads(body)
             
+            # Validate incoming task data
+            is_valid, error_message = validate_task(data, schema_type="create")
+            if not is_valid:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = get_validation_error_response(error_message)
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
+            
             user_id = getattr(self, 'current_user_id', None)
             tasks = load_tasks(user_id)
             
@@ -351,7 +365,7 @@ class GTDHandler:
             now = datetime.now().isoformat()
             new_task = {
                 'id': str(uuid.uuid4())[:8],
-                'text': data.get('text', ''),
+                'text': data.get('text', '') or data.get('content', ''),
                 'completed': False,
                 'createdAt': now,
                 'updatedAt': now,
@@ -367,6 +381,13 @@ class GTDHandler:
             self.end_headers()
             self.wfile.write(json.dumps(new_task).encode('utf-8'))
             
+        except json.JSONDecodeError as e:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            error_response = {"success": False, "error": "Invalid JSON", "message": str(e)}
+            self.wfile.write(json.dumps(error_response).encode('utf-8'))
         except Exception as e:
             self.send_error(500, f"Error adding task: {str(e)}")
     
@@ -376,6 +397,17 @@ class GTDHandler:
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length).decode('utf-8')
             data = json.loads(body)
+            
+            # Validate incoming bulk task data
+            is_valid, error_message = validate_task(data, schema_type="bulk")
+            if not is_valid:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = get_validation_error_response(error_message)
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
             
             user_id = getattr(self, 'current_user_id', None)
             tasks = load_tasks(user_id)
@@ -393,6 +425,13 @@ class GTDHandler:
             self.end_headers()
             self.wfile.write(json.dumps({'success': True}).encode('utf-8'))
             
+        except json.JSONDecodeError as e:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            error_response = {"success": False, "error": "Invalid JSON", "message": str(e)}
+            self.wfile.write(json.dumps(error_response).encode('utf-8'))
         except Exception as e:
             self.send_error(500, f"Error updating tasks: {str(e)}")
     
@@ -419,7 +458,23 @@ class GTDHandler:
             url = query_params.get('url', [None])[0]
             
             if not url:
-                self.send_error(400, "URL parameter required")
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "Validation failed", "message": "URL parameter required"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
+            
+            # Validate URL format
+            is_valid, error_message = validate_url({"url": url})
+            if not is_valid:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = get_validation_error_response(error_message)
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
                 return
             
             title = extract_title_from_url(url)

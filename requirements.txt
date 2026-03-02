@@ -6,6 +6,9 @@ psutil>=5.9.0
 # 可选依赖（用于 URL 标题提取功能）
 beautifulsoup4>=4.11.0
 
+# JSON Schema validation for API input validation
+jsonschema>=4.17.0
+
 # 开发依赖（可选）
 # pytest>=7.0.0
 # black>=22.0.0
