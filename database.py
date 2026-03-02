@@ -12,9 +12,12 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 import threading
 
+# Import configuration
+from config import APP_DIR, AUTH_DB_PATH
+
 # Database path
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_PATH = os.path.join(BASE_DIR, 'data', 'auth.db')
+BASE_DIR = APP_DIR
+DATABASE_PATH = AUTH_DB_PATH
 
 # Thread-local storage for database connections
 _local = threading.local()

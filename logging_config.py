@@ -2,7 +2,20 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-def setup_logging(log_dir='/var/log/molt-server', level=logging.INFO):
+# Import configuration
+try:
+    from config import LOG_DIR, LOG_LEVEL
+    DEFAULT_LOG_DIR = LOG_DIR
+    DEFAULT_LOG_LEVEL = getattr(logging, LOG_LEVEL, logging.INFO)
+except ImportError:
+    DEFAULT_LOG_DIR = '/var/log/molt-server'
+    DEFAULT_LOG_LEVEL = logging.INFO
+
+def setup_logging(log_dir=None, level=None):
+    if log_dir is None:
+        log_dir = DEFAULT_LOG_DIR
+    if level is None:
+        level = DEFAULT_LOG_LEVEL
     """Setup structured logging with rotation."""
     # Create log directory
     os.makedirs(log_dir, exist_ok=True)

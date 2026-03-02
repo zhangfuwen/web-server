@@ -13,13 +13,16 @@ import sys
 from datetime import datetime
 import uuid
 
+# Import configuration
+from config import APP_DIR, WEB_ROOT, GTD_DATA_DIR, GTD_TASKS_FILE
+
 # GTD tasks file path - now supports per-user directories
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-GTD_BASE_DIR = os.path.join(BASE_DIR, 'gtd')
-STATIC_DIR = os.path.join(BASE_DIR, 'static')
+BASE_DIR = APP_DIR
+GTD_BASE_DIR = GTD_DATA_DIR
+STATIC_DIR = os.path.join(WEB_ROOT, 'static')
 
 # Default tasks file (for backwards compatibility)
-GTD_TASKS_FILE = os.path.join(GTD_BASE_DIR, 'tasks.json')
+# GTD_TASKS_FILE is now imported from config
 
 
 def get_user_tasks_dir(user_id):

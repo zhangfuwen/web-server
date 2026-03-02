@@ -26,12 +26,18 @@ try:
 except ImportError:
     BEAUTIFULSOUP_AVAILABLE = False
 
-# 设置工作目录 - 支持通过环境变量 WEB_ROOT 配置，默认为 /var/www/html
-BASE_DIR = os.environ.get('WEB_ROOT', '/var/www/html')
-STATIC_DIR = os.path.join(BASE_DIR, 'static')
+# Import configuration
+from config import (
+    APP_DIR, WEB_ROOT, LOG_DIR, SERVER_PORT, SERVER_HOST,
+    GTD_DATA_DIR, GTD_TASKS_FILE, BOTREPORTS_DIR,
+    AUTH_DB_PATH, OAUTH_CONFIG_FILE, LOG_LEVEL
+)
+
+STATIC_DIR = os.path.join(WEB_ROOT, 'static')
+BASE_DIR = WEB_ROOT  # For backward compatibility
 
 # 导入 GTD 模块
-from gtd import GTDHandler, GTD_TASKS_FILE
+from gtd import GTDHandler
 
 # Import logging
 from logging_config import setup_logging
@@ -960,18 +966,21 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.send_error(500, f"Error serving BotReports: {str(e)}")
 
 
-def run(port=8081, reloader=False):
+def run(port=None, reloader=False):
     """运行服务器
     
     Args:
-        port: 端口号
+        port: 端口号 (defaults to SERVER_PORT from config)
         reloader: 是否启用热重载
     """
+    if port is None:
+        port = SERVER_PORT
+    
     if reloader:
         # 使用 hupper 监视文件变化并自动重启
         reloader = hupper.start_reloader('main')
     
-    server_address = ('', port)
+    server_address = (SERVER_HOST, port)
     httpd = ThreadedHTTPServer(server_address, UnifiedHTTPRequestHandler)
     logger.info(f"Starting unified web server with comments support on port {port}...")
     logger.info(f"Serving directory: {BASE_DIR}")
@@ -983,7 +992,7 @@ def run(port=8081, reloader=False):
 
 if __name__ == '__main__':
     import sys
-    port = 8081
+    port = SERVER_PORT  # Use config default
     reloader = False
     
     # 解析命令行参数
@@ -996,7 +1005,7 @@ if __name__ == '__main__':
             try:
                 port = int(args[i])
             except ValueError:
-                logger.error(f"Invalid port number: {args[i]}, using default port 8081")
+                logger.error(f"Invalid port number: {args[i]}, using default port {SERVER_PORT}")
         i += 1
     
     run(port, reloader)
