@@ -7,6 +7,12 @@ This file provides methods to be added to the main server for auth support.
 import json
 from urllib.parse import parse_qs
 
+# Import AUTH_ENABLED from auth module
+try:
+    from auth import AUTH_ENABLED
+except ImportError:
+    AUTH_ENABLED = False
+
 # Auth integration methods for UnifiedHTTPRequestHandler
 
 def serve_current_user(self):

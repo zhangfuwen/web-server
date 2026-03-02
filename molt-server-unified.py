@@ -222,6 +222,10 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         elif path.startswith('/gtd/'):
             return self.serve_gtd_static(path)
         
+        # Login page
+        elif path == '/login' or path == '/login/':
+            return self.serve_login_page()
+        
         # KodExplorer - served directly by Apache (see molt-server.conf)
         # 根路径 - 显示增强的文件列表
         elif path == '/' or path == '/index.html':
@@ -1094,6 +1098,24 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 self.send_error(404, "API documentation not found")
         except Exception as e:
             self.send_error(500, f"Error serving API docs: {str(e)}")
+
+    def serve_login_page(self):
+        """Serve login page for authentication"""
+        try:
+            login_path = os.path.join(STATIC_DIR, 'auth', 'login.html')
+            if os.path.exists(login_path):
+                with open(login_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'no-cache')
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_error(404, "Login page not found")
+        except Exception as e:
+            self.send_error(500, f"Error serving login page: {str(e)}")
 
     def serve_openapi_spec(self):
         """Serve OpenAPI specification (YAML)"""
