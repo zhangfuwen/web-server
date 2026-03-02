@@ -11,6 +11,7 @@ import sys
 import json
 import psutil
 import time
+import hashlib
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import unquote, urlparse, parse_qs
@@ -33,8 +34,17 @@ from config import (
     AUTH_DB_PATH, OAUTH_CONFIG_FILE, LOG_LEVEL
 )
 
+# Import caching module
+from cache import TTLCache
+
 STATIC_DIR = os.path.join(WEB_ROOT, 'static')
 BASE_DIR = WEB_ROOT  # For backward compatibility
+
+# Initialize cache instances for system metrics
+# System metrics (CPU, memory, disk) - 5 second TTL
+system_metrics_cache = TTLCache(ttl_seconds=5)
+# Process list - 10 second TTL (changes less frequently)
+process_list_cache = TTLCache(ttl_seconds=10)
 
 # 导入 GTD 模块
 from gtd import GTDHandler
@@ -162,6 +172,10 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         # 系统信息页面
         if path == '/system-info':
             return self.serve_system_info()
+        
+        # Cache statistics endpoint
+        if path == '/system-info/cache-stats':
+            return self.serve_cache_stats()
         
         # BotReports endpoints
         elif path == '/api/bot-reports':
@@ -445,6 +459,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html.encode('utf-8'))))
+            self.send_header('Cache-Control', 'public, max-age=5')
+            self.send_header('ETag', etag)
             self.end_headers()
             self.wfile.write(html.encode('utf-8'))
 
@@ -655,7 +671,12 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         return '\n'.join(rows)
 
     def get_system_info(self):
-        """获取系统信息"""
+        """获取系统信息 (with TTL caching)"""
+        # Try to get cached system metrics (5 second TTL)
+        cached_info = system_metrics_cache.get('system_metrics')
+        if cached_info is not None:
+            return cached_info
+        
         info = {}
         
         # Memory info
@@ -675,27 +696,39 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             'per_core': psutil.cpu_percent(interval=1, percpu=True)
         }
         
-        # Process info (all non-system processes)
-        processes = []
-        for proc in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'cpu_percent', 'memory_percent', 'status']):
-            try:
-                # Skip system/kernel processes
-                if proc.info['username'] in ['root', 'system', 'SYSTEM'] and proc.info['pid'] < 1000:
-                    continue
-                if proc.info['name'] in ['kthreadd', 'migration', 'rcu_gp', 'idle_inject']:
-                    continue
-                    
-                processes.append(proc.info)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                pass
-        
-        # Sort by CPU usage (top 20)
-        processes_by_cpu = sorted(processes, key=lambda x: x['cpu_percent'] or 0, reverse=True)[:20]
-        # Sort by memory usage (top 20)
-        processes_by_memory = sorted(processes, key=lambda x: x['memory_percent'] or 0, reverse=True)[:20]
-        
-        info['processes_by_cpu'] = processes_by_cpu
-        info['processes_by_memory'] = processes_by_memory
+        # Process info (all non-system processes) - cached separately with 10s TTL
+        cached_processes = process_list_cache.get('process_list')
+        if cached_processes is not None:
+            info['processes_by_cpu'] = cached_processes['by_cpu']
+            info['processes_by_memory'] = cached_processes['by_memory']
+        else:
+            # Fetch process list (expensive operation)
+            processes = []
+            for proc in psutil.process_iter(['pid', 'ppid', 'name', 'username', 'cpu_percent', 'memory_percent', 'status']):
+                try:
+                    # Skip system/kernel processes
+                    if proc.info['username'] in ['root', 'system', 'SYSTEM'] and proc.info['pid'] < 1000:
+                        continue
+                    if proc.info['name'] in ['kthreadd', 'migration', 'rcu_gp', 'idle_inject']:
+                        continue
+                        
+                    processes.append(proc.info)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+            
+            # Sort by CPU usage (top 20)
+            processes_by_cpu = sorted(processes, key=lambda x: x['cpu_percent'] or 0, reverse=True)[:20]
+            # Sort by memory usage (top 20)
+            processes_by_memory = sorted(processes, key=lambda x: x['memory_percent'] or 0, reverse=True)[:20]
+            
+            info['processes_by_cpu'] = processes_by_cpu
+            info['processes_by_memory'] = processes_by_memory
+            
+            # Cache the process list
+            process_list_cache.set('process_list', {
+                'by_cpu': processes_by_cpu,
+                'by_memory': processes_by_memory
+            })
         
         # Network info
         net_io = psutil.net_io_counters()
@@ -717,6 +750,9 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         # Uptime
         info['uptime'] = time.time() - psutil.boot_time()
         
+        # Cache the system metrics
+        system_metrics_cache.set('system_metrics', info)
+        
         return info
 
     def format_bytes(self, bytes_value):
@@ -728,9 +764,22 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         return f"{bytes_value:.1f} PB"
 
     def serve_system_info(self):
-        """Serve the system information page"""
+        """Serve the system information page with cache headers"""
         try:
             info = self.get_system_info()
+            
+            # Generate ETag based on cache timestamp
+            cache_stats = system_metrics_cache.get_stats()
+            etag = f'"{hashlib.md5(str(cache_stats["cached_entries"]).encode()).hexdigest()}"'
+            
+            # Check for conditional request (If-None-Match)
+            if_none_match = self.headers.get('If-None-Match')
+            if if_none_match and if_none_match == etag:
+                self.send_response(304)  # Not Modified
+                self.send_header('Cache-Control', 'public, max-age=5')
+                self.send_header('ETag', etag)
+                self.end_headers()
+                return
             
             # Format memory
             mem_total = self.format_bytes(info['memory']['total'])
@@ -909,11 +958,30 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html.encode('utf-8'))))
+            self.send_header('Cache-Control', 'public, max-age=5')
+            self.send_header('ETag', etag)
             self.end_headers()
             self.wfile.write(html.encode('utf-8'))
             
         except Exception as e:
             self.send_error(500, f"系统监控错误: {str(e)}")
+
+    def serve_cache_stats(self):
+        """Serve cache statistics as JSON"""
+        try:
+            stats = {
+                'system_metrics': system_metrics_cache.get_stats(),
+                'process_list': process_list_cache.get_stats()
+            }
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-cache')
+            self.end_headers()
+            self.wfile.write(json.dumps(stats, indent=2).encode('utf-8'))
+            
+        except Exception as e:
+            self.send_error(500, f"Cache stats error: {str(e)}")
 
     def serve_bot_reports_list(self):
         """Serve BotReports list as JSON"""
