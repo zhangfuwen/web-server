@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-#import hupper
-
-# 支持热重载
-#if hupper.is_active():
-#    # 在热重载模式下，重新加载时保持运行
-#    pass
 
 import os
 import sys
@@ -1085,10 +1079,6 @@ def run(port=None, reloader=False):
     """
     if port is None:
         port = SERVER_PORT
-    
-    if reloader:
-        # 使用 hupper 监视文件变化并自动重启
-        reloader = hupper.start_reloader('main')
     
     server_address = (SERVER_HOST, port)
     httpd = ThreadedHTTPServer(server_address, UnifiedHTTPRequestHandler)

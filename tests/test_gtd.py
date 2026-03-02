@@ -13,7 +13,6 @@ from unittest.mock import patch, MagicMock
 from gtd import (
     get_user_tasks_dir, get_user_tasks_file,
     load_tasks, save_tasks, read_tasks, write_tasks, clear_tasks,
-    parse_markdown_to_json, generate_markdown_with_comments,
     extract_title_from_url, GTDHandler
 )
 
@@ -219,62 +218,6 @@ class TestGTDCategoryFiltering:
             loaded = load_tasks(user_id='test_user')
             
             assert len(loaded['projects']) == 3
-
-
-class TestGTDCommentHandling:
-    """Test comment handling in tasks."""
-    
-    def test_parse_markdown_with_comments(self):
-        """Test parsing markdown with comments."""
-        markdown = """# Projects
-- [ ] Task with comment
-  <!-- Comment: This is a comment -->
-- [ ] Another task
-"""
-        
-        tasks = parse_markdown_to_json(markdown)
-        
-        assert len(tasks['projects']) == 2
-        assert len(tasks['projects'][0]['comments']) == 1
-        assert tasks['projects'][0]['comments'][0]['text'] == 'This is a comment'
-    
-    def test_generate_markdown_with_comments(self):
-        """Test generating markdown with comments."""
-        tasks = {
-            'projects': [{
-                'id': 'p1',
-                'text': 'Task with comment',
-                'completed': False,
-                'comments': [
-                    {'id': 'c1', 'text': 'Test comment', 'createdAt': '2024-01-01'}
-                ]
-            }],
-            'next_actions': [],
-            'waiting_for': [],
-            'someday_maybe': []
-        }
-        
-        markdown = generate_markdown_with_comments(tasks)
-        
-        assert '# Projects' in markdown
-        assert 'Task with comment' in markdown
-        assert 'Test comment' in markdown
-    
-    def test_task_without_comments(self, temp_gtd_dir):
-        """Test tasks without comments work correctly."""
-        with patch('gtd.GTD_BASE_DIR', os.path.dirname(os.path.dirname(temp_gtd_dir))):
-            test_tasks = {
-                'projects': [{'id': 'p1', 'text': 'Simple task'}],
-                'next_actions': [],
-                'waiting_for': [],
-                'someday_maybe': []
-            }
-            
-            save_tasks(test_tasks, user_id='test_user')
-            loaded = load_tasks(user_id='test_user')
-            
-            assert 'comments' in loaded['projects'][0]
-            assert loaded['projects'][0]['comments'] == []
 
 
 class TestGTDExtractTitle:

@@ -164,16 +164,7 @@ Comments can encode additional metadata using special prefixes:
 
 ### Data Migration Note
 
-The system previously used Markdown format (`tasks.md`):
-
-```markdown
-# Projects
-- [ ] 完成 web 服务器改进
-  <!-- Comment: due: 2026-03-15 -->
-  <!-- Comment: [ ] 测试性能优化 -->
-```
-
-Legacy Markdown parsing is still supported in `gtd.py` via `parse_markdown_to_json()`, but all new data is stored as JSON.
+**Phase 2 Cleanup (2026-03-02):** Legacy Markdown support has been removed. The system now exclusively uses JSON format for all task storage and API operations.
 
 ---
 
@@ -254,9 +245,9 @@ Content-Type: application/json
 
 ### PUT /api/gtd/tasks
 
-**Description:** Update all tasks (full replace). Supports both JSON and Markdown formats.
+**Description:** Update all tasks (full replace). JSON format only.
 
-**Request (JSON):**
+**Request:**
 ```http
 PUT /api/gtd/tasks
 Content-Type: application/json
@@ -267,19 +258,6 @@ Content-Type: application/json
   "waiting_for": [...],
   "someday_maybe": [...]
 }
-```
-
-**Request (Markdown):**
-```http
-PUT /api/gtd/tasks
-Content-Type: text/markdown
-
-# Projects
-- [ ] Task 1
-  <!-- Comment: Note -->
-
-# Next Actions
-- [ ] Action 1
 ```
 
 **Response:** `200 OK`
@@ -506,7 +484,7 @@ let columns = [...];      // Column definitions
 | `parseGtdData()` | Transform raw JSON to renderable objects |
 | `renderBoard()` | Generate Kanban board HTML |
 | `renderTaskCard(task)` | Generate individual task card HTML |
-| `saveGtdData()` | Convert to Markdown and PUT to API |
+| `saveGtdData()` | Serialize and PUT to API as JSON |
 | `addTask()` | Create new task in Projects |
 | `toggleComplete(taskId)` | Toggle task completion |
 | `updateTaskTitle(taskId, el)` | Inline title edit save |
@@ -548,22 +526,22 @@ let columns = [...];      // Column definitions
 
 ## Known Issues & Technical Debt
 
-### 🔴 Critical Issues
+### ✅ Resolved Issues
 
-#### 1. Data Format Inconsistency
+#### 1. Data Format Inconsistency - RESOLVED (Phase 2, 2026-03-02)
 
-**Problem:** Frontend saves as Markdown, backend stores as JSON.
+**Problem:** Frontend saved as Markdown, backend stored as JSON.
 
-**Location:** `index.html:saveGtdData()` converts to Markdown → `gtd.py:update_gtd_tasks()` parses back to JSON.
+**Resolution:** Markdown support removed from `gtd.py`. Frontend now saves directly as JSON.
 
 **Impact:**
-- Unnecessary conversion overhead
-- Potential data loss during conversion
-- Comment metadata (IDs, timestamps) may be lost
-
-**Fix Required:** Standardize on JSON end-to-end.
+- Eliminated conversion overhead
+- No data loss risk
+- Comment metadata (IDs, timestamps) preserved correctly
 
 ---
+
+### 🔴 Current Issues
 
 #### 2. Task ID Generation Mismatch
 
@@ -705,9 +683,9 @@ let columns = [...];      // Column definitions
 
 ## Future Enhancement Ideas
 
-### Short-term (1-4 weeks)
+### ✅ Completed Enhancements
 
-#### 1. JSON-Native Save
+#### 1. JSON-Native Save - COMPLETED (Phase 2, 2026-03-02)
 
 **Description:** Save directly as JSON instead of Markdown conversion.
 
@@ -715,18 +693,13 @@ let columns = [...];      // Column definitions
 - Preserves all metadata (IDs, timestamps)
 - Faster save operations
 - Simpler code
+- Reduced technical debt
 
-**Implementation:**
-```javascript
-// Replace saveGtdData() to send rawGtdData as JSON
-const response = await fetch('/api/gtd/tasks', {
-  method: 'PUT',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(rawGtdData)
-});
-```
+**Status:** Implemented. Markdown support removed from `gtd.py`.
 
 ---
+
+### Short-term (1-4 weeks)
 
 #### 2. Task Search
 
@@ -808,7 +781,7 @@ const response = await fetch('/api/gtd/tasks', {
 
 #### 8. Export/Import
 
-**Description:** Export tasks to JSON/Markdown/CSV.
+**Description:** Export tasks to JSON/CSV. (Markdown export removed in Phase 2)
 
 **Features:**
 - Backup creation
@@ -875,8 +848,10 @@ const response = await fetch('/api/gtd/tasks', {
 | Main Handler | `/home/admin/Code/molt_server/gtd.py` | Backend logic, API endpoints |
 | Frontend | `/home/admin/Code/molt_server/static/gtd/index.html` | UI, client-side logic |
 | Data | `/home/admin/Code/molt_server/gtd/tasks.json` | Task storage |
-| Legacy Data | `/home/admin/Code/molt_server/gtd/tasks.md` | Deprecated Markdown format |
-| Legacy Handler | `/home/admin/Code/molt_server/src/molt_server/gtd.py` | Deprecated module copy |
+
+**Removed in Phase 2 (2026-03-02):**
+- `gtd/tasks.md` - Deprecated Markdown format
+- `src/molt_server/gtd.py` - Deprecated module copy (entire `src/` directory removed)
 
 ### B. Dependencies
 
