@@ -47,6 +47,9 @@ from gtd import GTDHandler
 from logging_config import setup_logging
 logger = setup_logging()
 
+# Import plugin manager
+from plugin_manager import plugin_manager
+
 # Import WebSocket handler
 from websocket_handler import ws_server
 
@@ -1121,6 +1124,10 @@ def run(port=None, reloader=False):
     if port is None:
         port = SERVER_PORT
     
+    # Load and initialize plugins
+    plugin_manager.load_plugins()
+    logger.info(f"Loaded {len(plugin_manager.plugins)} plugins")
+    
     # Start WebSocket server in background thread
     ws_server.start_thread()
     logger.info(f"WebSocket server started on ws://localhost:8765")
@@ -1135,13 +1142,28 @@ def run(port=None, reloader=False):
     
     server_address = (SERVER_HOST, port)
     httpd = ThreadedHTTPServer(server_address, UnifiedHTTPRequestHandler)
+    
+    # Let plugins register routes
+    plugin_manager.register_routes(httpd)
+    
+    # Call plugin startup hooks
+    plugin_manager.startup(httpd)
+    
     logger.info(f"Starting unified web server with comments support on port {port}...")
     logger.info(f"Serving directory: {BASE_DIR}")
     logger.info(f"GTD app available at: http://bot.xjbcode.fun:{port}/gtd")
     logger.info(f"System monitor available at: http://bot.xjbcode.fun:{port}/system-info")
     logger.info(f"KodExplorer should be accessible at: http://bot.xjbcode.fun:{port}/kodexplorer/")
     logger.info(f"Moltbot WebUI available at: http://bot.xjbcode.fun:18789")
-    httpd.serve_forever()
+    
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        logger.info("Shutting down server...")
+    finally:
+        # Call plugin shutdown hooks
+        plugin_manager.shutdown()
+        logger.info("All plugins shut down")
 
 if __name__ == '__main__':
     import sys
