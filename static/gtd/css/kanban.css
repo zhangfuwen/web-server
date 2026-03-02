@@ -1,0 +1,316 @@
+/* GTD Desktop - Kanban Board Styles */
+
+/* Task Board */
+.task-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.task-column {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.column-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.column-count {
+    background: var(--gray-200);
+    color: var(--gray-600);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 200px;
+}
+
+/* Task Card */
+.task-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.task-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--primary-light);
+}
+
+.task-card.priority-high {
+    border-left: 4px solid var(--danger);
+}
+
+.task-card.priority-medium {
+    border-left: 4px solid var(--warning);
+}
+
+.task-card.priority-low {
+    border-left: 4px solid var(--success);
+}
+
+.task-card.completed {
+    opacity: 0.6;
+}
+
+.task-card.completed .task-title {
+    text-decoration: line-through;
+    color: var(--gray-500);
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.task-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-900);
+    flex: 1;
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    line-height: 1.4;
+}
+
+.task-title:hover {
+    background: var(--gray-100);
+}
+
+.task-title:focus {
+    outline: none;
+    background: var(--white);
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.task-title.editing {
+    background: var(--white);
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.task-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.task-card:hover .task-actions {
+    opacity: 1;
+}
+
+.task-action-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--gray-100);
+    color: var(--gray-600);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 12px;
+}
+
+.task-action-btn:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.task-action-btn.complete-btn:hover {
+    background: var(--success);
+}
+
+.task-meta {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    font-size: 10px;
+    color: var(--gray-500);
+    margin-bottom: 6px;
+}
+
+.task-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: var(--gray-100);
+    border-radius: 4px;
+    font-size: 10px;
+}
+
+/* Task Comments */
+.task-comments {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--gray-200);
+    font-size: 11px;
+}
+
+.task-comment {
+    background: var(--gray-50);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+    color: var(--gray-700);
+    cursor: text;
+    padding-right: 24px;
+    position: relative;
+    font-size: 11px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.comment-time {
+    font-size: 9px;
+    color: var(--gray-400);
+    margin-left: auto;
+    flex-shrink: 0;
+    padding-left: 8px;
+}
+
+.task-comment.subtask {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.task-comment.subtask:hover {
+    background: var(--gray-100);
+}
+
+.task-comment-checkbox {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--gray-400);
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+}
+
+.task-comment.subtask .task-comment-checkbox:hover {
+    border-color: var(--primary);
+}
+
+.task-comment-checkbox.checked {
+    background: var(--success);
+    border-color: var(--success);
+    color: var(--white);
+}
+
+.task-comment-text {
+    flex: 1;
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    word-break: break-word;
+}
+
+.task-comment.subtask .task-comment-text:hover {
+    background: var(--gray-200);
+}
+
+.task-comment-text:focus {
+    outline: none;
+    background: var(--white);
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.task-comment-text.completed {
+    text-decoration: line-through;
+    color: var(--gray-400);
+}
+
+.task-comment-delete {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: none;
+    background: var(--gray-300);
+    color: var(--gray-600);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.task-comment:hover .task-comment-delete {
+    display: flex;
+}
+
+.task-comment-delete:hover {
+    background: var(--danger);
+    color: var(--white);
+}
+
+.add-comment {
+    margin-top: 4px;
+}
+
+.add-comment input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px dashed var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    outline: none;
+    transition: all 0.2s;
+    background: var(--gray-50);
+}
+
+.add-comment input:focus {
+    border-color: var(--primary);
+    border-style: solid;
+    background: var(--white);
+}
+
+.add-comment input::placeholder {
+    color: var(--gray-400);
+}
+
+.task-comment:last-child {
+    margin-bottom: 0;
+}
