@@ -47,6 +47,9 @@ from gtd import GTDHandler
 from logging_config import setup_logging
 logger = setup_logging()
 
+# Import WebSocket handler
+from websocket_handler import ws_server
+
 # 导入认证模块
 try:
     from auth import AuthHandler, SESSION_COOKIE_NAME, get_user_data_path, get_user_gtd_path
@@ -983,6 +986,21 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         except Exception as e:
             self.send_error(500, f"Cache stats error: {str(e)}")
 
+    def handle_websocket_upgrade(self):
+        """Handle WebSocket upgrade request"""
+        # Note: The built-in HTTP server doesn't support WebSocket protocol upgrade
+        # This endpoint informs clients that WebSocket is available on port 8765
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        response = {
+            'status': 'WebSocket server running',
+            'ws_url': f'ws://localhost:8765',
+            'message': 'Connect to the WebSocket URL for real-time updates'
+        }
+        self.wfile.write(json.dumps(response).encode('utf-8'))
+
     def serve_bot_reports_list(self):
         """Serve BotReports list as JSON"""
         try:
@@ -1079,6 +1097,10 @@ def run(port=None, reloader=False):
     """
     if port is None:
         port = SERVER_PORT
+    
+    # Start WebSocket server in background thread
+    ws_server.start_thread()
+    logger.info(f"WebSocket server started on ws://localhost:8765")
     
     server_address = (SERVER_HOST, port)
     httpd = ThreadedHTTPServer(server_address, UnifiedHTTPRequestHandler)

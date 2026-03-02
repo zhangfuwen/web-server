@@ -7,12 +7,20 @@ SQLite-based storage with connection pooling and thread safety.
 import sqlite3
 import os
 import threading
+import json
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from contextlib import contextmanager
 
 # Import configuration
 from config import APP_DIR, GTD_DATA_DIR
+
+# Import WebSocket handler for real-time broadcasts
+try:
+    from websocket_handler import ws_server
+    WS_ENABLED = True
+except ImportError:
+    WS_ENABLED = False
 
 # Database path
 DATABASE_PATH = os.path.join(GTD_DATA_DIR, 'gtd.db')
@@ -84,6 +92,20 @@ def get_pool() -> ConnectionPool:
     return _pool
 
 
+def broadcast_event(event_type: str, data: Dict):
+    """Broadcast event to all WebSocket clients."""
+    if WS_ENABLED:
+        try:
+            message = json.dumps({
+                'type': event_type,
+                'data': data,
+                'timestamp': datetime.now().isoformat()
+            })
+            ws_server.broadcast(message)
+        except Exception as e:
+            print(f"WebSocket broadcast failed: {e}")
+
+
 @contextmanager
 def get_db_connection():
     """Context manager for database connections."""
@@ -153,7 +175,9 @@ def create_task(task_id: str, user_id: Optional[str], content: str,
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (task_id, user_id, content, category, priority, due_date, now, now))
             conn.commit()
-            return get_task(task_id)
+            task = get_task(task_id)
+            broadcast_event('task:created', task)
+            return task
     except sqlite3.IntegrityError as e:
         print(f"Task creation failed: {e}")
         return None
@@ -221,7 +245,11 @@ def update_task(task_id: str, **kwargs) -> bool:
         cursor = conn.cursor()
         cursor.execute(query, values)
         conn.commit()
-        return cursor.rowcount > 0
+        success = cursor.rowcount > 0
+        if success:
+            task = get_task(task_id)
+            broadcast_event('task:updated', task)
+        return success
 
 
 def delete_task(task_id: str) -> bool:
@@ -230,7 +258,10 @@ def delete_task(task_id: str) -> bool:
         cursor = conn.cursor()
         cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        success = cursor.rowcount > 0
+        if success:
+            broadcast_event('task:deleted', {'id': task_id})
+        return success
 
 
 def task_exists(task_id: str) -> bool:
@@ -254,7 +285,9 @@ def create_comment(comment_id: str, task_id: str, user_id: Optional[str],
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             """, (comment_id, task_id, user_id, content))
             conn.commit()
-            return get_comment(comment_id)
+            comment = get_comment(comment_id)
+            broadcast_event('comment:created', comment)
+            return comment
     except sqlite3.IntegrityError as e:
         print(f"Comment creation failed: {e}")
         return None
@@ -291,7 +324,11 @@ def update_comment(comment_id: str, content: str) -> bool:
             WHERE id = ?
         """, (content, comment_id))
         conn.commit()
-        return cursor.rowcount > 0
+        success = cursor.rowcount > 0
+        if success:
+            comment = get_comment(comment_id)
+            broadcast_event('comment:updated', comment)
+        return success
 
 
 def delete_comment(comment_id: str) -> bool:
@@ -300,7 +337,10 @@ def delete_comment(comment_id: str) -> bool:
         cursor = conn.cursor()
         cursor.execute('DELETE FROM comments WHERE id = ?', (comment_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        success = cursor.rowcount > 0
+        if success:
+            broadcast_event('comment:deleted', {'id': comment_id})
+        return success
 
 
 # ============== Subtask Operations ==============
@@ -316,7 +356,9 @@ def create_subtask(subtask_id: str, task_id: str, content: str,
                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """, (subtask_id, task_id, content, done, sort_order))
             conn.commit()
-            return get_subtask(subtask_id)
+            subtask = get_subtask(subtask_id)
+            broadcast_event('subtask:created', subtask)
+            return subtask
     except sqlite3.IntegrityError as e:
         print(f"Subtask creation failed: {e}")
         return None
@@ -364,7 +406,11 @@ def update_subtask(subtask_id: str, **kwargs) -> bool:
         cursor = conn.cursor()
         cursor.execute(query, values)
         conn.commit()
-        return cursor.rowcount > 0
+        success = cursor.rowcount > 0
+        if success:
+            subtask = get_subtask(subtask_id)
+            broadcast_event('subtask:updated', subtask)
+        return success
 
 
 def delete_subtask(subtask_id: str) -> bool:
@@ -373,7 +419,10 @@ def delete_subtask(subtask_id: str) -> bool:
         cursor = conn.cursor()
         cursor.execute('DELETE FROM subtasks WHERE id = ?', (subtask_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        success = cursor.rowcount > 0
+        if success:
+            broadcast_event('subtask:deleted', {'id': subtask_id})
+        return success
 
 
 # ============== Utility Functions ==============

@@ -14,5 +14,8 @@ jsonschema>=4.17.0
 # black>=22.0.0
 # flake8>=5.0.0
 
+# WebSocket support
+websockets>=10.0
+
 # Python 版本要求
 # 需要 Python 3.7 或更高版本
