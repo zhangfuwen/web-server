@@ -425,6 +425,83 @@ def delete_subtask(subtask_id: str) -> bool:
         return success
 
 
+# ============== Schedule Operations ==============
+
+def add_schedule(task_id: str, scheduled_at: str, recurrence: str = 'none') -> Optional[Dict]:
+    """Add a schedule/reminder for a task."""
+    import uuid
+    schedule_id = str(uuid.uuid4())
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO schedules (id, task_id, scheduled_at, recurrence, created_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """, (schedule_id, task_id, scheduled_at, recurrence))
+            conn.commit()
+            return get_schedule(schedule_id)
+    except sqlite3.IntegrityError as e:
+        print(f"Schedule creation failed: {e}")
+        return None
+
+
+def get_schedule(schedule_id: str) -> Optional[Dict]:
+    """Get schedule by ID."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM schedules WHERE id = ?', (schedule_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def get_scheduled_tasks(user_id: Optional[str] = None) -> List[Dict]:
+    """Get all scheduled tasks with their schedule info."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        if user_id:
+            cursor.execute("""
+                SELECT s.*, t.content, t.user_id
+                FROM schedules s
+                JOIN tasks t ON s.task_id = t.id
+                WHERE t.user_id = ?
+                ORDER BY s.scheduled_at ASC
+            """, (user_id,))
+        else:
+            cursor.execute("""
+                SELECT s.*, t.content
+                FROM schedules s
+                JOIN tasks t ON s.task_id = t.id
+                ORDER BY s.scheduled_at ASC
+            """)
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def cancel_schedule(schedule_id: str) -> bool:
+    """Cancel/delete a schedule."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM schedules WHERE id = ?', (schedule_id,))
+        conn.commit()
+        success = cursor.rowcount > 0
+        if success:
+            broadcast_event('schedule:cancelled', {'id': schedule_id})
+        return success
+
+
+def update_schedule_reminder_sent(schedule_id: str, reminder_sent: int = 1) -> bool:
+    """Update the reminder_sent status of a schedule."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE schedules 
+            SET reminder_sent = ?
+            WHERE id = ?
+        """, (reminder_sent, schedule_id))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
 # ============== Utility Functions ==============
 
 def get_task_statistics(user_id: Optional[str] = None) -> Dict:

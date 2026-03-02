@@ -50,6 +50,9 @@ logger = setup_logging()
 # Import WebSocket handler
 from websocket_handler import ws_server
 
+# Import task scheduler
+from scheduler import TaskScheduler, scheduler
+
 # 导入认证模块
 try:
     from auth import AuthHandler, SESSION_COOKIE_NAME, get_user_data_path, get_user_gtd_path
@@ -199,6 +202,17 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         elif path == '/api/gtd/title':
             return self.extract_title_api()
         
+        # GTD Schedule API endpoints
+        elif path == '/api/gtd/schedule':
+            if AUTH_ENABLED:
+                session = self.get_session_from_request()
+                if not session:
+                    self.send_response(302)
+                    self.send_header('Location', '/login')
+                    self.end_headers()
+                    return
+            return self.serve_gtd_schedules()
+        
         # GTD app
         elif path == '/gtd' or path == '/gtd/':
             return self.serve_gtd_app()
@@ -222,6 +236,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         # GTD API endpoints
         if path == '/api/gtd/tasks':
             return self.add_gtd_task()
+        elif path == '/api/gtd/schedule':
+            return self.add_gtd_schedule()
         else:
             self.send_error(404, "API endpoint not found")
 
@@ -233,6 +249,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         # GTD API endpoints
         if path == '/api/gtd/tasks':
             return self.update_gtd_tasks()
+        elif path == '/api/gtd/schedule':
+            return self.update_gtd_schedule()
         else:
             self.send_error(404, "API endpoint not found")
 
@@ -244,6 +262,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         # GTD API endpoints
         if path == '/api/gtd/tasks':
             return self.clear_gtd_tasks()
+        elif path == '/api/gtd/schedule':
+            return self.delete_gtd_schedule()
         else:
             self.send_error(404, "API endpoint not found")
 
@@ -1104,6 +1124,14 @@ def run(port=None, reloader=False):
     # Start WebSocket server in background thread
     ws_server.start_thread()
     logger.info(f"WebSocket server started on ws://localhost:8765")
+    
+    # Initialize and start task scheduler
+    from gtd_db import init_database
+    init_database()
+    global scheduler
+    scheduler = TaskScheduler(None)  # DB is accessed via connection pool
+    scheduler.start()
+    logger.info(f"Task scheduler started")
     
     server_address = (SERVER_HOST, port)
     httpd = ThreadedHTTPServer(server_address, UnifiedHTTPRequestHandler)

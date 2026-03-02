@@ -379,6 +379,168 @@ class GTDHandler:
             
         except Exception as e:
             self.send_error(500, f"Error extracting title: {str(e)}")
+    
+    def serve_gtd_schedules(self):
+        """Serve all scheduled tasks as JSON"""
+        try:
+            from gtd_db import get_scheduled_tasks
+            user_id = getattr(self, 'current_user_id', None)
+            schedules = get_scheduled_tasks(user_id)
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(json.dumps(schedules).encode('utf-8'))))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'no-cache')
+            self.end_headers()
+            self.wfile.write(json.dumps(schedules).encode('utf-8'))
+            
+        except Exception as e:
+            self.send_error(500, f"Error reading schedules: {str(e)}")
+    
+    def add_gtd_schedule(self):
+        """Add a new schedule for a task"""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
+            
+            task_id = data.get('task_id')
+            scheduled_at = data.get('scheduled_at')
+            recurrence = data.get('recurrence', 'none')
+            
+            if not task_id or not scheduled_at:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "task_id and scheduled_at are required"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
+            
+            from gtd_db import add_schedule, task_exists
+            if not task_exists(task_id):
+                self.send_response(404)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "Task not found"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
+            
+            schedule = add_schedule(task_id, scheduled_at, recurrence)
+            
+            if schedule:
+                self.send_response(201)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(schedule).encode('utf-8'))
+            else:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "Failed to create schedule"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+            
+        except json.JSONDecodeError as e:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            error_response = {"success": False, "error": "Invalid JSON", "message": str(e)}
+            self.wfile.write(json.dumps(error_response).encode('utf-8'))
+        except Exception as e:
+            self.send_error(500, f"Error adding schedule: {str(e)}")
+    
+    def update_gtd_schedule(self):
+        """Update a schedule (mark reminder as sent or update recurrence)"""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
+            
+            schedule_id = data.get('id')
+            reminder_sent = data.get('reminder_sent')
+            recurrence = data.get('recurrence')
+            
+            if not schedule_id:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "schedule id is required"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
+            
+            from gtd_db import update_schedule_reminder_sent, get_schedule
+            if reminder_sent is not None:
+                success = update_schedule_reminder_sent(schedule_id, reminder_sent)
+            else:
+                success = True
+            
+            if success:
+                schedule = get_schedule(schedule_id)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(schedule).encode('utf-8'))
+            else:
+                self.send_response(404)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "Schedule not found"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+            
+        except json.JSONDecodeError as e:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            error_response = {"success": False, "error": "Invalid JSON", "message": str(e)}
+            self.wfile.write(json.dumps(error_response).encode('utf-8'))
+        except Exception as e:
+            self.send_error(500, f"Error updating schedule: {str(e)}")
+    
+    def delete_gtd_schedule(self):
+        """Delete/cancel a schedule"""
+        try:
+            # Get schedule ID from query string
+            parsed_path = urlparse(self.path)
+            query_params = parse_qs(parsed_path.query)
+            schedule_id = query_params.get('id', [None])[0]
+            
+            if not schedule_id:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "schedule id is required"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
+            
+            from gtd_db import cancel_schedule
+            success = cancel_schedule(schedule_id)
+            
+            if success:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True}).encode('utf-8'))
+            else:
+                self.send_response(404)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {"success": False, "error": "Schedule not found"}
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+            
+        except Exception as e:
+            self.send_error(500, f"Error deleting schedule: {str(e)}")
 
 
 # Backwards compatibility

@@ -73,6 +73,20 @@ CREATE TABLE IF NOT EXISTS metadata (
     value TEXT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Schedules table for task reminders and recurring tasks
+CREATE TABLE IF NOT EXISTS schedules (
+    id TEXT PRIMARY KEY,
+    task_id TEXT REFERENCES tasks(id) ON DELETE CASCADE,
+    scheduled_at TIMESTAMP NOT NULL,
+    reminder_sent INTEGER DEFAULT 0,
+    recurrence TEXT CHECK(recurrence IN ('none', 'daily', 'weekly', 'monthly', 'yearly')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_schedules_task_id ON schedules(task_id);
+CREATE INDEX IF NOT EXISTS idx_schedules_scheduled_at ON schedules(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_schedules_reminder_sent ON schedules(reminder_sent);
 """
 
 def create_schema(db_path):
