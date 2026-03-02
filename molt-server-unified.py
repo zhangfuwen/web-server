@@ -459,6 +459,9 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
 </body>
 </html>"""
 
+            # Generate ETag based on content hash
+            etag = f'"{hashlib.md5(html.encode()).hexdigest()}"'
+            
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html.encode('utf-8'))))

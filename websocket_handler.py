@@ -1,51 +1,68 @@
-import asyncio
-import websockets
+"""
+Simple WebSocket server for Molt Server.
+Uses synchronous websockets-sync library for thread-safe operation.
+"""
+
+try:
+    from websockets.sync.server import serve, ServerConnection
+except ImportError:
+    # Fallback for older websockets versions
+    from websockets.server import serve, ServerConnection
+
+import threading
 import json
-from threading import Thread
+import time
 
 class WebSocketServer:
     def __init__(self, host='127.0.0.1', port=8765):
         self.host = host
         self.port = port
         self.clients = set()
-        self.loop = None
+        self.lock = threading.Lock()
         self.server = None
+        self._stop = threading.Event()
     
-    async def handler(self, websocket, path):
-        self.clients.add(websocket)
+    def handler(self, websocket):
+        """Handle a single WebSocket connection."""
+        with self.lock:
+            self.clients.add(websocket)
         try:
-            async for message in websocket:
-                # Handle incoming messages if needed
+            for message in websocket:
+                # Echo or process messages if needed
                 pass
         finally:
-            self.clients.discard(websocket)
+            with self.lock:
+                self.clients.discard(websocket)
     
     def broadcast(self, message):
-        """Broadcast message to all clients (call from main thread)"""
-        if self.clients:
-            asyncio.run_coroutine_threadsafe(
-                self._broadcast_async(message),
-                self.loop
-            )
-    
-    async def _broadcast_async(self, message):
-        if self.clients:
-            await asyncio.gather(
-                *[client.send(message) for client in self.clients],
-                return_exceptions=True
-            )
+        """Broadcast message to all connected clients."""
+        with self.lock:
+            clients = list(self.clients)
+        
+        for client in clients:
+            try:
+                client.send(message)
+            except Exception:
+                # Client disconnected, will be cleaned up
+                pass
     
     def start(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        self.server = websockets.serve(self.handler, self.host, self.port)
-        self.loop.run_until_complete(self.server)
-        self.loop.run_forever()
+        """Start the WebSocket server (blocking)."""
+        with serve(self.handler, self.host, self.port) as self.server:
+            self.server.serve_forever()
     
     def start_thread(self):
-        thread = Thread(target=self.start, daemon=True)
+        """Start the WebSocket server in a background thread."""
+        thread = threading.Thread(target=self.start, daemon=True)
         thread.start()
+        time.sleep(0.5)  # Give server time to start
         return thread
+    
+    def stop(self):
+        """Stop the WebSocket server."""
+        self._stop.set()
+        if self.server:
+            self.server.shutdown()
 
 # Global instance
 ws_server = WebSocketServer()
