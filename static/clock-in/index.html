@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上班打卡系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .current-time {
+            text-align: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .checkbox-item:hover {
+            background: #e9ecef;
+        }
+
+        .checkbox-item.checked {
+            background: #e8f4fd;
+            border-color: #667eea;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .checkbox-item span {
+            font-size: 15px;
+            color: #333;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-clock-in {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-clock-in:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-clock-out {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-clock-out:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .today-status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .today-status strong {
+            color: #333;
+        }
+
+        .link-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .link-container a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .link-container a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .current-time {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📍 上班打卡系统</h1>
+        <p class="subtitle">记录您的工作时间</p>
+        
+        <div class="current-time" id="currentTime">00:00:00</div>
+
+        <form id="clockForm">
+            <div class="form-group">
+                <label for="userName">姓名</label>
+                <input type="text" id="userName" name="userName" placeholder="请输入您的姓名" required>
+            </div>
+
+            <div class="form-group">
+                <label>选项（可多选）</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item" for="hasHat">
+                        <input type="checkbox" id="hasHat" name="hasHat">
+                        <span>🧢 带帽子</span>
+                    </label>
+                    <label class="checkbox-item" for="hasMask">
+                        <input type="checkbox" id="hasMask" name="hasMask">
+                        <span>😷 带口罩</span>
+                    </label>
+                    <label class="checkbox-item" for="tookLongRoute">
+                        <input type="checkbox" id="tookLongRoute" name="tookLongRoute">
+                        <span>🚶 走远路</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">备注</label>
+                <textarea id="notes" name="notes" placeholder="请输入备注信息（可选）"></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-clock-in" id="btnClockIn" onclick="clockIn()">
+                    ⏰ 上班打卡
+                </button>
+                <button type="button" class="btn btn-clock-out" id="btnClockOut" onclick="clockOut()">
+                    🏠 下班打卡
+                </button>
+            </div>
+        </form>
+
+        <div class="status-message" id="statusMessage"></div>
+
+        <div class="today-status" id="todayStatus">
+            加载中...
+        </div>
+
+        <div class="link-container">
+            <a href="/clock-in/records.html">📊 查看打卡记录</a>
+        </div>
+    </div>
+
+    <script>
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', { hour12: false });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Checkbox styling
+        document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const item = this.closest('.checkbox-item');
+                if (this.checked) {
+                    item.classList.add('checked');
+                } else {
+                    item.classList.remove('checked');
+                }
+            });
+        });
+
+        // Show status message
+        function showStatus(message, isSuccess) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = 'status-message ' + (isSuccess ? 'success' : 'error');
+            statusEl.style.display = 'block';
+
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Load today's status
+        async function loadTodayStatus() {
+            try {
+                const userName = localStorage.getItem('clockInUserName') || '';
+                if (!userName) {
+                    document.getElementById('todayStatus').innerHTML = '请输入姓名进行打卡';
+                    return;
+                }
+
+                const response = await fetch(`/api/clock-in/today?user=${encodeURIComponent(userName)}`);
+                const data = await response.json();
+
+                let html = `<strong>今日打卡状态：</strong><br>`;
+                
+                if (data.clock_in) {
+                    const time = new Date(data.clock_in.clock_time).toLocaleTimeString('zh-CN', { hour12: false });
+                    html += `✅ 上班：<strong>${time}</strong>`;
+                    if (data.clock_in.has_hat) html += ' 🧢';
+                    if (data.clock_in.has_mask) html += ' 😷';
+                    if (data.clock_in.took_long_route) html += ' 🚶';
+                    html += '<br>';
+                } else {
+                    html += '❌ 上班：未打卡<br>';
+                }
+
+                if (data.clock_out) {
+                    const time = new Date(data.clock_out.clock_time).toLocaleTimeString('zh-CN', { hour12: false });
+                    html += `✅ 下班：<strong>${time}</strong>`;
+                    if (data.clock_out.has_hat) html += ' 🧢';
+                    if (data.clock_out.has_mask) html += ' 😷';
+                    if (data.clock_out.took_long_route) html += ' 🚶';
+                } else {
+                    html += '❌ 下班：未打卡';
+                }
+
+                document.getElementById('todayStatus').innerHTML = html;
+            } catch (error) {
+                console.error('Failed to load today status:', error);
+                document.getElementById('todayStatus').innerHTML = '无法加载今日状态';
+            }
+        }
+
+        // Clock in
+        async function clockIn() {
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                showStatus('请输入姓名', false);
+                return;
+            }
+
+            // Save user name for convenience
+            localStorage.setItem('clockInUserName', userName);
+
+            const formData = {
+                user_name: userName,
+                clock_type: 'clock_in',
+                has_hat: document.getElementById('hasHat').checked,
+                has_mask: document.getElementById('hasMask').checked,
+                took_long_route: document.getElementById('tookLongRoute').checked,
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/clock-in', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showStatus(`✅ 上班打卡成功！时间：${new Date(result.record.clock_time).toLocaleTimeString('zh-CN', { hour12: false })}`, true);
+                    loadTodayStatus();
+                    // Clear notes but keep name
+                    document.getElementById('notes').value = '';
+                    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item').classList.remove('checked');
+                    });
+                } else {
+                    showStatus(`❌ 打卡失败：${result.error || '未知错误'}`, false);
+                }
+            } catch (error) {
+                showStatus(`❌ 网络错误：${error.message}`, false);
+            }
+        }
+
+        // Clock out
+        async function clockOut() {
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                showStatus('请输入姓名', false);
+                return;
+            }
+
+            // Save user name for convenience
+            localStorage.setItem('clockInUserName', userName);
+
+            const formData = {
+                user_name: userName,
+                clock_type: 'clock_out',
+                has_hat: document.getElementById('hasHat').checked,
+                has_mask: document.getElementById('hasMask').checked,
+                took_long_route: document.getElementById('tookLongRoute').checked,
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/clock-in', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showStatus(`✅ 下班打卡成功！时间：${new Date(result.record.clock_time).toLocaleTimeString('zh-CN', { hour12: false })}`, true);
+                    loadTodayStatus();
+                    // Clear notes but keep name
+                    document.getElementById('notes').value = '';
+                    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.checkbox-item').classList.remove('checked');
+                    });
+                } else {
+                    showStatus(`❌ 打卡失败：${result.error || '未知错误'}`, false);
+                }
+            } catch (error) {
+                showStatus(`❌ 网络错误：${error.message}`, false);
+            }
+        }
+
+        // Load user name from localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('clockInUserName');
+            if (savedName) {
+                document.getElementById('userName').value = savedName;
+            }
+            loadTodayStatus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打卡记录 - 上班打卡系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .filters {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filters input,
+        .filters select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .filters button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .filters button:hover {
+            opacity: 0.9;
+        }
+
+        .records-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-clock-in {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-clock-out {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .emoji-badge {
+            font-size: 16px;
+        }
+
+        .no-records {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters input,
+            .filters select,
+            .filters button {
+                width: 100%;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 10px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/clock-in/" class="back-link">← 返回打卡页面</a>
+            <h1>📊 打卡记录</h1>
+            
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="value" id="statTotal">-</div>
+                    <div class="label">总记录数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="statClockIn">-</div>
+                    <div class="label">上班打卡</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="statClockOut">-</div>
+                    <div class="label">下班打卡</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="statUsers">-</div>
+                    <div class="label">用户数</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <input type="date" id="filterDate" value="">
+            <input type="text" id="filterUser" placeholder="按姓名筛选">
+            <select id="filterType">
+                <option value="">全部类型</option>
+                <option value="clock_in">上班打卡</option>
+                <option value="clock_out">下班打卡</option>
+            </select>
+            <button onclick="applyFilters()">🔍 筛选</button>
+            <button onclick="loadRecords()">🔄 刷新</button>
+        </div>
+
+        <div class="records-container">
+            <div id="recordsContent" class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        // Set default date to today
+        document.getElementById('filterDate').valueAsDate = new Date();
+
+        // Load statistics
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/clock-in/statistics');
+                const stats = await response.json();
+
+                document.getElementById('statTotal').textContent = stats.total_records || 0;
+                document.getElementById('statClockIn').textContent = stats.clock_in_count || 0;
+                document.getElementById('statClockOut').textContent = stats.clock_out_count || 0;
+                document.getElementById('statUsers').textContent = stats.unique_users || 0;
+            } catch (error) {
+                console.error('Failed to load statistics:', error);
+            }
+        }
+
+        // Load records
+        async function loadRecords() {
+            const contentEl = document.getElementById('recordsContent');
+            contentEl.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                let url = '/api/clock-in/records?limit=100';
+                
+                const date = document.getElementById('filterDate').value;
+                const user = document.getElementById('filterUser').value.trim();
+                const type = document.getElementById('filterType').value;
+
+                if (date) url += `&date=${date}`;
+                if (user) url += `&user=${encodeURIComponent(user)}`;
+                if (type) url += `&type=${type}`;
+
+                const response = await fetch(url);
+                const records = await response.json();
+
+                if (records.length === 0) {
+                    contentEl.innerHTML = '<div class="no-records">暂无打卡记录</div>';
+                    return;
+                }
+
+                let html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>姓名</th>
+                                <th>类型</th>
+                                <th>选项</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                records.forEach(record => {
+                    const time = new Date(record.clock_time).toLocaleString('zh-CN');
+                    const typeBadge = record.clock_type === 'clock_in' 
+                        ? '<span class="badge badge-clock-in">上班</span>'
+                        : '<span class="badge badge-clock-out">下班</span>';
+                    
+                    let options = '';
+                    if (record.has_hat) options += '<span class="emoji-badge" title="带帽子">🧢</span> ';
+                    if (record.has_mask) options += '<span class="emoji-badge" title="带口罩">😷</span> ';
+                    if (record.took_long_route) options += '<span class="emoji-badge" title="走远路">🚶</span> ';
+                    if (!options) options = '-';
+
+                    const notes = record.notes || '-';
+
+                    html += `
+                        <tr>
+                            <td>${time}</td>
+                            <td>${escapeHtml(record.user_name)}</td>
+                            <td>${typeBadge}</td>
+                            <td>${options}</td>
+                            <td>${escapeHtml(notes)}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                contentEl.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to load records:', error);
+                contentEl.innerHTML = '<div class="no-records">加载失败</div>';
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            loadRecords();
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initial load
+        loadStatistics();
+        loadRecords();
+    </script>
+</body>
+</html>

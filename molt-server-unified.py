@@ -68,6 +68,17 @@ except ImportError as e:
     AUTH_ENABLED = False
     logger.error(f"Auth module not available, running without authentication: {e}")
 
+# 导入打卡模块
+try:
+    from clock_in_db import init_database as init_clock_in_db, ClockInHandler
+    CLOCK_IN_ENABLED = True
+    # Initialize clock-in database
+    init_clock_in_db()
+    logger.info("Clock-in database initialized successfully")
+except ImportError as e:
+    CLOCK_IN_ENABLED = False
+    logger.error(f"Clock-in module not available: {e}")
+
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in separate threads."""
     pass
@@ -226,6 +237,22 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         elif path == '/login' or path == '/login/':
             return self.serve_login_page()
         
+        # Clock-in pages
+        elif path == '/clock-in' or path == '/clock-in/' or path == '/clock-in/index.html':
+            return self.serve_clock_in_page()
+        elif path == '/clock-in/records.html':
+            return self.serve_clock_in_records_page()
+        
+        # Clock-in API endpoints
+        elif path == '/api/clock-in':
+            return self.serve_clock_in_api()
+        elif path == '/api/clock-in/records':
+            return self.serve_clock_in_records_api()
+        elif path == '/api/clock-in/today':
+            return self.serve_clock_in_today_api()
+        elif path == '/api/clock-in/statistics':
+            return self.serve_clock_in_statistics_api()
+        
         # KodExplorer - served directly by Apache (see molt-server.conf)
         # 根路径 - 显示增强的文件列表
         elif path == '/' or path == '/index.html':
@@ -245,6 +272,9 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             return self.add_gtd_task()
         elif path == '/api/gtd/schedule':
             return self.add_gtd_schedule()
+        # Clock-in API
+        elif path == '/api/clock-in':
+            return self.handle_clock_in_post()
         else:
             self.send_error(404, "API endpoint not found")
 
@@ -1134,6 +1164,202 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                 self.send_error(404, "OpenAPI specification not found")
         except Exception as e:
             self.send_error(500, f"Error serving OpenAPI spec: {str(e)}")
+
+    def serve_clock_in_page(self):
+        """Serve clock-in page"""
+        try:
+            clock_in_path = os.path.join(STATIC_DIR, 'clock-in', 'index.html')
+            if os.path.exists(clock_in_path):
+                with open(clock_in_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'no-cache')
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_error(404, "Clock-in page not found")
+        except Exception as e:
+            self.send_error(500, f"Error serving clock-in page: {str(e)}")
+
+    def serve_clock_in_records_page(self):
+        """Serve clock-in records page"""
+        try:
+            records_path = os.path.join(STATIC_DIR, 'clock-in', 'records.html')
+            if os.path.exists(records_path):
+                with open(records_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'no-cache')
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_error(404, "Clock-in records page not found")
+        except Exception as e:
+            self.send_error(500, f"Error serving clock-in records page: {str(e)}")
+
+    def handle_clock_in_post(self):
+        """Handle clock-in POST request"""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
+            
+            # Validate required fields
+            user_name = data.get('user_name', '').strip()
+            clock_type = data.get('clock_type', '')
+            
+            if not user_name:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': '姓名不能为空'}).encode('utf-8'))
+                return
+            
+            if clock_type not in ['clock_in', 'clock_out']:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': '无效的打卡类型'}).encode('utf-8'))
+                return
+            
+            # Import clock_in_db if not already imported
+            try:
+                from clock_in_db import add_clock_in_record
+            except ImportError:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': '打卡模块未加载'}).encode('utf-8'))
+                return
+            
+            # Add record
+            record = add_clock_in_record(
+                user_name=user_name,
+                clock_type=clock_type,
+                has_hat=data.get('has_hat', False),
+                has_mask=data.get('has_mask', False),
+                took_long_route=data.get('took_long_route', False),
+                notes=data.get('notes', ''),
+                ip_address=self.client_address[0] if self.client_address else None,
+                user_agent=self.headers.get('User-Agent', '')
+            )
+            
+            if record:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'success': True,
+                    'record': record
+                }).encode('utf-8'))
+            else:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': '保存记录失败'}).encode('utf-8'))
+                
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'success': False, 'error': '无效的 JSON 数据'}).encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Clock-in error: {e}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode('utf-8'))
+
+    def serve_clock_in_records_api(self):
+        """Serve clock-in records API"""
+        try:
+            from clock_in_db import get_records_by_date, get_records_by_user, get_all_records
+            
+            query_params = parse_qs(urlparse(self.path).query)
+            
+            date = query_params.get('date', [None])[0]
+            user = query_params.get('user', [None])[0]
+            clock_type = query_params.get('type', [None])[0]
+            limit = int(query_params.get('limit', [100])[0])
+            
+            if date:
+                records = get_records_by_date(date)
+            elif user:
+                records = get_records_by_user(user, limit)
+            else:
+                records = get_all_records(limit)
+            
+            # Filter by type if specified
+            if clock_type:
+                records = [r for r in records if r['clock_type'] == clock_type]
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(records).encode('utf-8'))
+            
+        except Exception as e:
+            logger.error(f"Clock-in records API error: {e}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+    def serve_clock_in_today_api(self):
+        """Serve today's clock-in status for a user"""
+        try:
+            from clock_in_db import get_user_today_record
+            
+            query_params = parse_qs(urlparse(self.path).query)
+            user = query_params.get('user', [None])[0]
+            
+            if not user:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': '用户名为必需'}).encode('utf-8'))
+                return
+            
+            clock_in = get_user_today_record(user, 'clock_in')
+            clock_out = get_user_today_record(user, 'clock_out')
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                'clock_in': clock_in,
+                'clock_out': clock_out
+            }).encode('utf-8'))
+            
+        except Exception as e:
+            logger.error(f"Clock-in today API error: {e}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+    def serve_clock_in_statistics_api(self):
+        """Serve clock-in statistics"""
+        try:
+            from clock_in_db import get_statistics
+            
+            stats = get_statistics()
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(stats).encode('utf-8'))
+            
+        except Exception as e:
+            logger.error(f"Clock-in statistics API error: {e}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
 
 def run(port=None, reloader=False):

@@ -20,5 +20,8 @@ BOTREPORTS_DIR = os.getenv('MOLT_BOTREPORTS_DIR', os.path.join(WEB_ROOT, 'BotRep
 AUTH_DB_PATH = os.getenv('MOLT_AUTH_DB_PATH', os.path.join(APP_DIR, 'data', 'auth.db'))
 OAUTH_CONFIG_FILE = os.getenv('MOLT_OAUTH_CONFIG', os.path.join(APP_DIR, 'config', 'oauth.json'))
 
+# Clock-in settings
+CLOCK_IN_DB_PATH = os.getenv('MOLT_CLOCK_IN_DB_PATH', os.path.join(APP_DIR, 'data', 'clock_in.db'))
+
 # Logging
 LOG_LEVEL = os.getenv('MOLT_LOG_LEVEL', 'INFO')
