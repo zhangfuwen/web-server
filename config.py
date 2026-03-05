@@ -21,7 +21,7 @@ AUTH_DB_PATH = os.getenv('MOLT_AUTH_DB_PATH', os.path.join(APP_DIR, 'data', 'aut
 OAUTH_CONFIG_FILE = os.getenv('MOLT_OAUTH_CONFIG', os.path.join(APP_DIR, 'config', 'oauth.json'))
 
 # Clock-in settings
-CLOCK_IN_DB_PATH = os.getenv('MOLT_CLOCK_IN_DB_PATH', os.path.join(APP_DIR, 'data', 'clock_in.db'))
+CLOCK_IN_DB_PATH = os.getenv('MOLT_CLOCK_IN_DB_PATH', os.path.join(WEB_ROOT, 'clock_in.db'))
 
 # Logging
 LOG_LEVEL = os.getenv('MOLT_LOG_LEVEL', 'INFO')
