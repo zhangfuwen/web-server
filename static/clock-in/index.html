@@ -245,11 +245,6 @@
 
         <form id="clockForm">
             <div class="form-group">
-                <label for="userName">姓名</label>
-                <input type="text" id="userName" name="userName" placeholder="请输入您的姓名" required>
-            </div>
-
-            <div class="form-group">
                 <label>选项（可多选）</label>
                 <div class="checkbox-group">
                     <label class="checkbox-item" for="hasHat">
@@ -331,13 +326,7 @@
         // Load today's status
         async function loadTodayStatus() {
             try {
-                const userName = localStorage.getItem('clockInUserName') || '';
-                if (!userName) {
-                    document.getElementById('todayStatus').innerHTML = '请输入姓名进行打卡';
-                    return;
-                }
-
-                const response = await fetch(`/api/clock-in/today?user=${encodeURIComponent(userName)}`);
+                const response = await fetch(`/api/clock-in/today?user=${encodeURIComponent('用户')}`);
                 const data = await response.json();
 
                 let html = `<strong>今日打卡状态：</strong><br>`;
@@ -372,17 +361,8 @@
 
         // Clock in
         async function clockIn() {
-            const userName = document.getElementById('userName').value.trim();
-            if (!userName) {
-                showStatus('请输入姓名', false);
-                return;
-            }
-
-            // Save user name for convenience
-            localStorage.setItem('clockInUserName', userName);
-
             const formData = {
-                user_name: userName,
+                user_name: '用户',
                 clock_type: 'clock_in',
                 has_hat: document.getElementById('hasHat').checked,
                 has_mask: document.getElementById('hasMask').checked,
@@ -404,7 +384,6 @@
                 if (response.ok && result.success) {
                     showStatus(`✅ 上班打卡成功！时间：${new Date(result.record.clock_time).toLocaleTimeString('zh-CN', { hour12: false })}`, true);
                     loadTodayStatus();
-                    // Clear notes but keep name
                     document.getElementById('notes').value = '';
                     document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         cb.checked = false;
@@ -420,17 +399,8 @@
 
         // Clock out
         async function clockOut() {
-            const userName = document.getElementById('userName').value.trim();
-            if (!userName) {
-                showStatus('请输入姓名', false);
-                return;
-            }
-
-            // Save user name for convenience
-            localStorage.setItem('clockInUserName', userName);
-
             const formData = {
-                user_name: userName,
+                user_name: '用户',
                 clock_type: 'clock_out',
                 has_hat: document.getElementById('hasHat').checked,
                 has_mask: document.getElementById('hasMask').checked,
@@ -452,7 +422,6 @@
                 if (response.ok && result.success) {
                     showStatus(`✅ 下班打卡成功！时间：${new Date(result.record.clock_time).toLocaleTimeString('zh-CN', { hour12: false })}`, true);
                     loadTodayStatus();
-                    // Clear notes but keep name
                     document.getElementById('notes').value = '';
                     document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         cb.checked = false;
@@ -466,12 +435,7 @@
             }
         }
 
-        // Load user name from localStorage
         window.addEventListener('DOMContentLoaded', () => {
-            const savedName = localStorage.getItem('clockInUserName');
-            if (savedName) {
-                document.getElementById('userName').value = savedName;
-            }
             loadTodayStatus();
         });
     </script>

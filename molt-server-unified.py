@@ -1208,16 +1208,9 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             body = self.rfile.read(content_length).decode('utf-8')
             data = json.loads(body)
             
-            # Validate required fields
-            user_name = data.get('user_name', '').strip()
+            # Fixed user name for single-user mode
+            user_name = '用户'
             clock_type = data.get('clock_type', '')
-            
-            if not user_name:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'success': False, 'error': '姓名不能为空'}).encode('utf-8'))
-                return
             
             if clock_type not in ['clock_in', 'clock_out']:
                 self.send_response(400)
@@ -1315,14 +1308,11 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             from clock_in_db import get_user_today_record
             
             query_params = parse_qs(urlparse(self.path).query)
-            user = query_params.get('user', [None])[0]
+            user = query_params.get('user', ['用户'])[0]
             
+            # Fixed user name for single-user mode if not provided
             if not user:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'error': '用户名为必需'}).encode('utf-8'))
-                return
+                user = '用户'
             
             clock_in = get_user_today_record(user, 'clock_in')
             clock_out = get_user_today_record(user, 'clock_out')
