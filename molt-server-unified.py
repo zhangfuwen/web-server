@@ -70,7 +70,7 @@ except ImportError as e:
 
 # 导入打卡模块
 try:
-    from clock_in_db import init_database as init_clock_in_db, ClockInHandler
+    from clock_in_db import init_database as init_clock_in_db
     CLOCK_IN_ENABLED = True
     # Initialize clock-in database
     init_clock_in_db()
