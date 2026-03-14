@@ -79,6 +79,21 @@ except ImportError as e:
     CLOCK_IN_ENABLED = False
     logger.error(f"Clock-in module not available: {e}")
 
+# 导入祝福/禅语模块 (Blessings)
+try:
+    import blessings_db
+    from blessings_api import BlessingsAPIHandler
+    BLESSINGS_ENABLED = True
+    # Initialize blessings database
+    blessings_db.init_database()
+    blessings_db.seed_initial_blessings()
+    blessings_api_handler = BlessingsAPIHandler()
+    logger.info("Blessings module loaded successfully")
+except ImportError as e:
+    BLESSINGS_ENABLED = False
+    blessings_api_handler = None
+    logger.error(f"Blessings module not available: {e}")
+
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in separate threads."""
     pass
@@ -227,7 +242,19 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
                     return
             return self.serve_gtd_schedules()
         
+        # Blessings API endpoints (禅语/祝福)
+        elif BLESSINGS_ENABLED and blessings_api_handler.handle_request(self, 'GET', path):
+            return
+        
+        # Blessings API endpoints (禅语/祝福)
+        elif BLESSINGS_ENABLED and path.startswith('/api/blessings'):
+            if blessings_api_handler.handle_request(self, 'GET', path):
+                return
+        
         # GTD app
+        # Blessings web page
+        elif path == '/blessings' or path == '/blessings/':
+            return self.serve_blessings_page()
         elif path == '/gtd' or path == '/gtd/':
             return self.serve_gtd_app()
         elif path.startswith('/gtd/'):
@@ -266,6 +293,11 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         """处理POST请求"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
+
+        # Blessings API endpoints
+        if BLESSINGS_ENABLED and blessings_api_handler.handle_request(self, 'POST', path):
+            return
+
         
         # GTD API endpoints
         if path == '/api/gtd/tasks':
@@ -282,6 +314,11 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         """处理PUT请求"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
+
+        # Blessings API endpoints
+        if BLESSINGS_ENABLED and blessings_api_handler.handle_request(self, 'PUT', path):
+            return
+
         
         # GTD API endpoints
         if path == '/api/gtd/tasks':
@@ -295,6 +332,11 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         """处理DELETE请求"""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
+
+        # Blessings API endpoints
+        if BLESSINGS_ENABLED and blessings_api_handler.handle_request(self, 'DELETE', path):
+            return
+
         
         # GTD API endpoints
         if path == '/api/gtd/tasks':
@@ -1350,6 +1392,25 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+
+    def serve_blessings_page(self):
+        """Serve the Blessings web page"""
+        try:
+            index_path = os.path.join(STATIC_DIR, 'blessings', 'index.html')
+            if os.path.exists(index_path):
+                with open(index_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'no-cache')
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self.send_error(404, "Blessings page not found")
+        except Exception as e:
+            self.send_error(500, f"Error serving blessings page: {str(e)}")
 
 
 def run(port=None, reloader=False):
