@@ -16,28 +16,31 @@
             background: #f8f5f2;
             color: #5a4a42;
             line-height: 1.6;
+            min-height: 100vh;
         }
         
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 15px;
         }
         
         /* Header */
         .header {
             background: #ffffff;
-            padding: 20px;
+            padding: 15px 20px;
             border-radius: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .header h1 {
-            font-size: 24px;
+            font-size: 22px;
             color: #5a4a42;
         }
         
@@ -48,6 +51,37 @@
             background: white;
             color: #5a4a42;
             font-size: 14px;
+            min-width: 120px;
+        }
+        
+        /* Stats */
+        .stats-bar {
+            background: #ffffff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #8b7355;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         /* Publish Form */
@@ -63,28 +97,51 @@
             font-size: 18px;
             margin-bottom: 15px;
             color: #5a4a42;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
         
         .form-group {
             margin-bottom: 15px;
         }
         
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
+            margin-bottom: 6px;
+            font-size: 13px;
             color: #666;
+            font-weight: 500;
         }
         
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #8b7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
         }
         
         .form-group textarea {
@@ -93,26 +150,29 @@
         }
         
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s;
         }
         
         .btn-primary {
-            background: #8b7355;
+            background: linear-gradient(135deg, #8b7355 0%, #6d5a43 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(139, 115, 85, 0.3);
         }
         
         .btn-primary:hover {
-            background: #6d5a43;
+            background: linear-gradient(135deg, #6d5a43 0%, #5a4a3a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 115, 85, 0.4);
         }
         
-        .btn-secondary {
-            background: #e0e0e0;
-            color: #333;
+        .btn-primary:active {
+            transform: translateY(0);
         }
         
         /* Blessing Cards */
@@ -122,21 +182,22 @@
             padding: 20px;
             margin-bottom: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         
         .blessing-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
         
         .category-tag {
             display: inline-block;
-            background: #f0ebe5;
+            background: linear-gradient(135deg, #f0ebe5 0%, #e8e0d5 100%);
             color: #8b7355;
             padding: 4px 12px;
             border-radius: 16px;
             font-size: 12px;
+            font-weight: 500;
             margin-bottom: 12px;
         }
         
@@ -145,6 +206,7 @@
             line-height: 1.8;
             margin-bottom: 10px;
             color: #2c2c2c;
+            font-weight: 400;
         }
         
         .blessing-source {
@@ -155,12 +217,13 @@
         }
         
         .blessing-practice {
-            background: #f8f5f2;
-            padding: 12px;
+            background: linear-gradient(135deg, #f8f5f2 0%, #f0ebe5 100%);
+            padding: 12px 15px;
             border-radius: 8px;
             font-size: 14px;
             color: #666;
             margin-bottom: 15px;
+            border-left: 3px solid #8b7355;
         }
         
         .blessing-practice strong {
@@ -170,35 +233,40 @@
         /* Actions */
         .actions {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             padding-top: 15px;
             border-top: 1px solid #f0f0f0;
+            flex-wrap: wrap;
         }
         
         .action-btn {
             display: flex;
             align-items: center;
-            gap: 5px;
-            background: none;
+            gap: 6px;
+            background: #f8f5f2;
             border: none;
             cursor: pointer;
-            color: #888;
-            font-size: 14px;
-            padding: 5px 10px;
-            border-radius: 6px;
+            color: #666;
+            font-size: 13px;
+            padding: 8px 14px;
+            border-radius: 8px;
             transition: all 0.2s;
+            font-weight: 500;
         }
         
         .action-btn:hover {
-            background: #f5f5f5;
+            background: #f0ebe5;
+            color: #8b7355;
         }
         
         .action-btn.active {
             color: #e74c3c;
+            background: #fef0ed;
         }
         
         .action-btn.favorite.active {
             color: #f39c12;
+            background: #fef5e7;
         }
         
         /* Comments Section */
@@ -211,8 +279,13 @@
         .comments-toggle {
             color: #888;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             margin-bottom: 10px;
+            transition: color 0.2s;
+        }
+        
+        .comments-toggle:hover {
+            color: #8b7355;
         }
         
         .comments-list {
@@ -234,6 +307,7 @@
             font-size: 13px;
             color: #8b7355;
             margin-bottom: 5px;
+            font-weight: 500;
         }
         
         .comment-content {
@@ -263,6 +337,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: 500;
         }
         
         /* Loading */
@@ -270,33 +345,85 @@
             text-align: center;
             padding: 40px;
             color: #888;
+            font-size: 14px;
         }
         
-        /* Stats */
-        .stats-bar {
-            background: #ffffff;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            display: flex;
-            gap: 30px;
-            justify-content: center;
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 12px 15px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .category-select {
+                width: 100%;
+            }
+            
+            .stats-bar {
+                gap: 20px;
+                padding: 10px 15px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .stat-label {
+                font-size: 10px;
+            }
+            
+            .publish-form {
+                padding: 15px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .blessing-card {
+                padding: 15px;
+            }
+            
+            .blessing-text {
+                font-size: 16px;
+            }
+            
+            .actions {
+                gap: 8px;
+            }
+            
+            .action-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
         }
         
-        .stat-item {
+        /* Empty State */
+        .empty-state {
             text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #8b7355;
-        }
-        
-        .stat-label {
-            font-size: 12px;
+            padding: 60px 20px;
             color: #888;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .empty-state-text {
+            font-size: 16px;
+            color: #999;
         }
     </style>
 </head>
@@ -329,32 +456,34 @@
         <!-- Publish Form -->
         <div class="publish-form">
             <h2>✍️ 分享你的感悟</h2>
-            <div class="form-group">
-                <label>禅语/感悟 *</label>
-                <textarea id="blessingText" placeholder="输入你想分享的禅语或感悟..."></textarea>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>禅语/感悟 *</label>
+                    <textarea id="blessingText" placeholder="输入你想分享的禅语或感悟..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>出处/来源</label>
+                    <input type="text" id="blessingSource" placeholder="如：《金刚经》">
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="blessingCategory">
+                        <option value="禅宗">禅宗</option>
+                        <option value="儒家">儒家</option>
+                        <option value="道家">道家</option>
+                        <option value="佛经">佛经</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label>今日练习</label>
+                    <textarea id="blessingPractice" placeholder="分享一个相关的修行练习...（可选）" style="min-height: 60px;"></textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label>你的名字</label>
+                    <input type="text" id="userName" placeholder="如何称呼你？（可选）">
+                </div>
             </div>
-            <div class="form-group">
-                <label>出处/来源</label>
-                <input type="text" id="blessingSource" placeholder="例如：《金刚经》、六祖慧能">
-            </div>
-            <div class="form-group">
-                <label>今日练习</label>
-                <textarea id="blessingPractice" placeholder="分享一个相关的修行练习..."></textarea>
-            </div>
-            <div class="form-group">
-                <label>分类</label>
-                <select id="blessingCategory">
-                    <option value="禅宗">禅宗</option>
-                    <option value="儒家">儒家</option>
-                    <option value="道家">道家</option>
-                    <option value="佛经">佛经</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>你的名字</label>
-                <input type="text" id="userName" placeholder="如何称呼你？">
-            </div>
-            <button class="btn btn-primary" onclick="publishBlessing()">发布</button>
+            <button class="btn btn-primary" onclick="publishBlessing()" style="width: 100%; margin-top: 10px;">发布</button>
         </div>
         
         <!-- Blessings List -->
@@ -401,15 +530,25 @@
                     : `${API_BASE}?limit=20&category=${encodeURIComponent(category)}`;
                 
                 const res = await fetch(url);
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 const data = await res.json();
                 
                 if (data.success) {
-                    blessingsCache = data.data;
-                    renderBlessings(data.data);
+                    blessingsCache = data.data || [];
+                    renderBlessings(blessingsCache);
+                } else {
+                    throw new Error(data.error || 'Unknown error');
                 }
             } catch (e) {
                 console.error('Failed to load blessings:', e);
-                document.getElementById('blessingsList').innerHTML = '<div class="loading">加载失败</div>';
+                document.getElementById('blessingsList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div class="empty-state-text">加载失败，请刷新重试</div>
+                    </div>
+                `;
             }
         }
         
@@ -417,8 +556,13 @@
         function renderBlessings(blessings) {
             const container = document.getElementById('blessingsList');
             
-            if (blessings.length === 0) {
-                container.innerHTML = '<div class="loading">暂无内容</div>';
+            if (!blessings || blessings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🍃</div>
+                        <div class="empty-state-text">暂无禅语，成为第一个分享的人吧</div>
+                    </div>
+                `;
                 return;
             }
             
