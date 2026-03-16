@@ -42,6 +42,19 @@ def init_database():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
+        # Add font_path and bg_path columns if they don't exist (migration)
+        try:
+            cursor.execute("ALTER TABLE blessings ADD COLUMN font_path TEXT")
+            logger.info("Added font_path column to blessings table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        try:
+            cursor.execute("ALTER TABLE blessings ADD COLUMN bg_path TEXT")
+            logger.info("Added bg_path column to blessings table")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
         # Create blessings table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS blessings (
@@ -54,6 +67,8 @@ def init_database():
                 category TEXT DEFAULT '禅宗',
                 like_count INTEGER DEFAULT 0,
                 favorite_count INTEGER DEFAULT 0,
+                font_path TEXT,
+                bg_path TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 is_deleted INTEGER DEFAULT 0
@@ -114,14 +129,15 @@ def init_database():
 
 
 def create_blessing(user_id: str, user_name: str, text: str, 
-                   source: str = "", practice: str = "", category: str = "禅宗") -> Optional[Dict]:
+                   source: str = "", practice: str = "", category: str = "禅宗",
+                   font_path: str = "", bg_path: str = "") -> Optional[Dict]:
     """Create a new blessing"""
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO blessings (user_id, user_name, text, source, practice, category)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (user_id, user_name, text, source, practice, category))
+            INSERT INTO blessings (user_id, user_name, text, source, practice, category, font_path, bg_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, user_name, text, source, practice, category, font_path, bg_path))
         conn.commit()
         
         blessing_id = cursor.lastrowid

@@ -199,7 +199,9 @@ class BlessingsAPIHandler:
                 text=data['text'],
                 source=data.get('source', ''),
                 practice=data.get('practice', ''),
-                category=data.get('category', '禅宗')
+                category=data.get('category', '禅宗'),
+                font_path=data.get('font_path', ''),
+                bg_path=data.get('bg_path', '')
             )
             
             handler.send_response(201)
