@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分享禅语 - 修心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8f5f2;
+            color: #5a4a42;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+        }
+        
+        /* Header */
+        .header {
+            background: #ffffff;
+            padding: 15px 20px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            color: #5a4a42;
+            font-weight: 600;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-text {
+            background: transparent;
+            color: #666;
+        }
+        
+        .btn-text:hover {
+            background: #f5f5f5;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #8b7355 0%, #6d5a43 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(139, 115, 85, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6d5a43 0%, #5a4a3a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 115, 85, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Content */
+        .content {
+            padding: 20px;
+        }
+        
+        /* Main input card */
+        .main-input-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .main-input-card label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #8b7d72;
+            font-weight: 500;
+        }
+        
+        .main-input-card textarea {
+            width: 100%;
+            border: none;
+            resize: vertical;
+            font-size: 16px;
+            line-height: 1.8;
+            font-family: inherit;
+            min-height: 120px;
+        }
+        
+        .main-input-card textarea:focus {
+            outline: none;
+        }
+        
+        .main-input-card textarea::placeholder {
+            color: #ccc;
+        }
+        
+        /* More button */
+        .more-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: #8b7d72;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .more-btn:hover {
+            background: rgba(139, 125, 114, 0.05);
+            border-radius: 8px;
+        }
+        
+        /* Advanced fields card */
+        .advanced-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: none;
+        }
+        
+        .advanced-card.show {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #8b7d72;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #8b7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+        
+        /* Category selector */
+        .category-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .category-chip {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .category-chip:hover {
+            border-color: #8b7355;
+            color: #8b7355;
+        }
+        
+        .category-chip.active {
+            background: linear-gradient(135deg, #8b7355 0%, #6d5a43 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(139, 115, 85, 0.3);
+        }
+        
+        /* Bottom spacing */
+        .bottom-spacer {
+            height: 40px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 0;
+            }
+            
+            .header {
+                border-radius: 0;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="btn btn-text" onclick="goBack()">取消</button>
+            <h1>分享禅语</h1>
+            <button class="btn btn-primary" id="publishBtn" onclick="publishBlessing()">发布</button>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Main Input -->
+            <div class="main-input-card">
+                <label>禅语内容</label>
+                <textarea 
+                    id="blessingText" 
+                    placeholder="在此输入禅语、感悟或智慧..."
+                    autofocus
+                ></textarea>
+            </div>
+            
+            <!-- More Button -->
+            <button class="more-btn" onclick="toggleAdvanced()">
+                <span id="moreBtnText">更多 ▼</span>
+            </button>
+            
+            <!-- Advanced Fields -->
+            <div class="advanced-card" id="advancedCard">
+                <!-- Source -->
+                <div class="form-group">
+                    <label>出处 / 来源</label>
+                    <input 
+                        type="text" 
+                        id="blessingSource" 
+                        placeholder="例如：《金刚经》、六祖慧能"
+                    />
+                </div>
+                
+                <!-- Practice -->
+                <div class="form-group">
+                    <label>今日练习</label>
+                    <textarea 
+                        id="blessingPractice" 
+                        placeholder="分享一个相关的修行练习..."
+                    ></textarea>
+                </div>
+                
+                <!-- Category -->
+                <div class="form-group">
+                    <label>分类</label>
+                    <div class="category-selector">
+                        <div class="category-chip active" data-value="禅宗" onclick="selectCategory(this)">禅宗</div>
+                        <div class="category-chip" data-value="儒家" onclick="selectCategory(this)">儒家</div>
+                        <div class="category-chip" data-value="道家" onclick="selectCategory(this)">道家</div>
+                        <div class="category-chip" data-value="佛经" onclick="selectCategory(this)">佛经</div>
+                    </div>
+                </div>
+                
+                <!-- Name -->
+                <div class="form-group">
+                    <label>你的名字</label>
+                    <input 
+                        type="text" 
+                        id="userName" 
+                        placeholder="如何称呼你？（可选，默认匿名）"
+                    />
+                </div>
+            </div>
+            
+            <div class="bottom-spacer"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api/blessings';
+        let currentUserId = 'web_user_' + Math.random().toString(36).substr(2, 9);
+        let selectedCategory = '禅宗';
+        
+        // Toggle advanced fields
+        function toggleAdvanced() {
+            const card = document.getElementById('advancedCard');
+            const btnText = document.getElementById('moreBtnText');
+            
+            if (card.classList.contains('show')) {
+                card.classList.remove('show');
+                btnText.textContent = '更多 ▼';
+            } else {
+                card.classList.add('show');
+                btnText.textContent = '收起 ▲';
+            }
+        }
+        
+        // Select category
+        function selectCategory(element) {
+            // Remove active from all
+            document.querySelectorAll('.category-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            
+            // Add active to clicked
+            element.classList.add('active');
+            selectedCategory = element.dataset.value;
+        }
+        
+        // Go back
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/gtd/';
+            }
+        }
+        
+        // Publish blessing
+        async function publishBlessing() {
+            const text = document.getElementById('blessingText').value.trim();
+            const source = document.getElementById('blessingSource').value.trim();
+            const practice = document.getElementById('blessingPractice').value.trim();
+            const userName = document.getElementById('userName').value.trim() || '匿名';
+            
+            if (!text) {
+                alert('请输入禅语/感悟内容');
+                document.getElementById('blessingText').focus();
+                return;
+            }
+            
+            // Disable button
+            const btn = document.getElementById('publishBtn');
+            btn.disabled = true;
+            btn.textContent = '发布中...';
+            
+            try {
+                const res = await fetch(`${API_BASE}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        user_name: userName,
+                        text: text,
+                        source: source,
+                        practice: practice,
+                        category: selectedCategory
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    alert('发布成功！');
+                    // Redirect to blessings list
+                    window.location.href = '/gtd/?tab=blessings';
+                } else {
+                    alert('发布失败：' + (data.error || '未知错误'));
+                    btn.disabled = false;
+                    btn.textContent = '发布';
+                }
+            } catch (e) {
+                alert('发布失败：' + e.message);
+                btn.disabled = false;
+                btn.textContent = '发布';
+            }
+        }
+        
+        // Handle Enter key in main textarea (optional: submit on Ctrl+Enter)
+        document.getElementById('blessingText').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                publishBlessing();
+            }
+        });
+    </script>
+</body>
+</html>

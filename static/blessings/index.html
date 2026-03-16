@@ -453,37 +453,11 @@
             </div>
         </div>
         
-        <!-- Publish Form -->
-        <div class="publish-form">
-            <h2>✍️ 分享你的感悟</h2>
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label>禅语/感悟 *</label>
-                    <textarea id="blessingText" placeholder="输入你想分享的禅语或感悟..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>出处/来源</label>
-                    <input type="text" id="blessingSource" placeholder="如：《金刚经》">
-                </div>
-                <div class="form-group">
-                    <label>分类</label>
-                    <select id="blessingCategory">
-                        <option value="禅宗">禅宗</option>
-                        <option value="儒家">儒家</option>
-                        <option value="道家">道家</option>
-                        <option value="佛经">佛经</option>
-                    </select>
-                </div>
-                <div class="form-group full-width">
-                    <label>今日练习</label>
-                    <textarea id="blessingPractice" placeholder="分享一个相关的修行练习...（可选）" style="min-height: 60px;"></textarea>
-                </div>
-                <div class="form-group full-width">
-                    <label>你的名字</label>
-                    <input type="text" id="userName" placeholder="如何称呼你？（可选）">
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="publishBlessing()" style="width: 100%; margin-top: 10px;">发布</button>
+        <!-- Publish Button -->
+        <div class="publish-form" style="text-align: center; padding: 30px 20px;">
+            <button class="btn btn-primary" onclick="goToPublish()" style="padding: 14px 40px; font-size: 16px;">
+                ✍️ 分享你的感悟
+            </button>
         </div>
         
         <!-- Blessings List -->
@@ -601,49 +575,9 @@
             `).join('');
         }
         
-        // Publish blessing
-        async function publishBlessing() {
-            const text = document.getElementById('blessingText').value.trim();
-            const source = document.getElementById('blessingSource').value.trim();
-            const practice = document.getElementById('blessingPractice').value.trim();
-            const category = document.getElementById('blessingCategory').value;
-            const userName = document.getElementById('userName').value.trim() || '匿名';
-            
-            if (!text) {
-                alert('请输入禅语/感悟内容');
-                return;
-            }
-            
-            try {
-                const res = await fetch(`${API_BASE}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        user_name: userName,
-                        text: text,
-                        source: source,
-                        practice: practice,
-                        category: category
-                    })
-                });
-                
-                const data = await res.json();
-                if (data.success) {
-                    alert('发布成功！');
-                    // Clear form
-                    document.getElementById('blessingText').value = '';
-                    document.getElementById('blessingSource').value = '';
-                    document.getElementById('blessingPractice').value = '';
-                    // Reload
-                    loadBlessings();
-                    loadStats();
-                } else {
-                    alert('发布失败：' + (data.error || '未知错误'));
-                }
-            } catch (e) {
-                alert('发布失败：' + e.message);
-            }
+        // Go to publish page
+        function goToPublish() {
+            window.location.href = '/blessings/publish.html';
         }
         
         // Toggle like
