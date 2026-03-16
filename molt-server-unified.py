@@ -255,6 +255,8 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
         # Blessings web page
         elif path == '/blessings' or path == '/blessings/':
             return self.serve_blessings_page()
+        elif path == '/blessings/publish.html':
+            return self.serve_blessings_page('publish.html')
         elif path == '/gtd' or path == '/gtd/':
             return self.serve_gtd_app()
         elif path.startswith('/gtd/'):
@@ -1394,12 +1396,17 @@ class UnifiedHTTPRequestHandler(GTDHandler, AuthHandler if AUTH_ENABLED else obj
             self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
 
 
-    def serve_blessings_page(self):
+    def serve_blessings_page(self, subpath=''):
         """Serve the Blessings web page"""
         try:
-            index_path = os.path.join(STATIC_DIR, 'blessings', 'index.html')
-            if os.path.exists(index_path):
-                with open(index_path, 'r', encoding='utf-8') as f:
+            # Determine which HTML file to serve
+            if subpath == 'publish.html':
+                html_path = os.path.join(STATIC_DIR, 'blessings', 'publish.html')
+            else:
+                html_path = os.path.join(STATIC_DIR, 'blessings', 'index.html')
+            
+            if os.path.exists(html_path):
+                with open(html_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
                 self.send_response(200)
