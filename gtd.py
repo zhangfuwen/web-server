@@ -131,6 +131,10 @@ def extract_title_from_url(url):
                 if title:
                     return title
         except Exception as e:
+            # If fetch fails and URL looks malformed (no scheme, not an absolute/relative path), return as is
+            if '://' not in url and not url.startswith('/') and not url.startswith('./') and not url.startswith('../'):
+                return url
+            # Otherwise, fall through to path processing
             pass
         
         # Strategy 2: Extract meaningful name from URL path
