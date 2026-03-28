@@ -80,7 +80,7 @@ BULK_TASKS_SCHEMA = {
 URL_EXTRACT_SCHEMA = {
     "type": "object",
     "properties": {
-        "url": {"type": "string", "format": "uri"}
+        "url": {"type": "string", "pattern": "^https?://[^\\s]+$"}
     },
     "required": ["url"],
     "additionalProperties": False

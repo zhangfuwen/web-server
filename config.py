@@ -6,7 +6,10 @@ WEB_ROOT = os.getenv('MOLT_WEB_ROOT', '/var/www/html')
 LOG_DIR = os.getenv('MOLT_LOG_DIR', '/var/log/molt-server')
 
 # Server settings
-SERVER_PORT = int(os.getenv('MOLT_SERVER_PORT', '8081'))
+port_str = os.getenv('MOLT_SERVER_PORT')
+if not port_str or port_str.strip() == '':
+    port_str = '8081'
+SERVER_PORT = int(port_str)
 SERVER_HOST = os.getenv('MOLT_SERVER_HOST', '127.0.0.1')
 
 # GTD settings

@@ -23,6 +23,9 @@ from database import (
     get_user_settings, update_user_settings, cleanup_expired_sessions
 )
 
+# Base directory of this module
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Configuration - Load from environment variables
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')

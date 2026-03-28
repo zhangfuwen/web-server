@@ -11,6 +11,7 @@ from auth import (
     generate_csrf_token, validate_csrf_token,
     generate_oauth_state, validate_oauth_state, cleanup_oauth_states,
     get_google_auth_url, get_wechat_auth_url,
+    get_google_user_info, get_wechat_user_info,
     OAuthError, AuthHandler,
     get_user_data_path, get_user_gtd_path, get_user_files_path
 )
@@ -195,7 +196,7 @@ class TestGoogleOAuth:
         mock_response.text = 'Invalid code'
         mock_post.return_value = mock_response
         
-        with pytest.raises(OAuthError):
+        with pytest.raises(auth.OAuthError):
             auth.exchange_google_code('invalid-code')
     
     @patch('auth.requests.get')
@@ -280,7 +281,7 @@ class TestWeChatOAuth:
         }
         mock_get.return_value = mock_response
         
-        with pytest.raises(OAuthError):
+        with pytest.raises(auth.OAuthError):
             auth.exchange_wechat_code('invalid-code')
 
 

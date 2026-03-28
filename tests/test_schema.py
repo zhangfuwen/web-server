@@ -138,6 +138,7 @@ class TestSchemaValidationInvalid:
     
     def test_invalid_url_not_a_url(self, invalid_url_data):
         """Test that invalid URL format is rejected."""
+        print(f"Invalid URL data: {invalid_url_data}")
         is_valid, error = validate_url(invalid_url_data)
         assert is_valid is False
     
